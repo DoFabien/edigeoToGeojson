@@ -1,0 +1,22 @@
+{
+  "name": "edigeo-to-geojson",
+  "version": "0.1.0",
+  "description": "Convertit les fichiers du cadatre français de l'EDIGEO en GEOJSON",
+  "main": "index.js",
+  "dependencies": {
+    "@turf/inside": "^3.7.0",
+    "@turf/point-on-surface": "^3.7.5",
+    "@turf/union": "^3.7.0",
+    "cryptography": "^1.2.2",
+    "iconv-lite": "^0.4.21",
+    "proj4": "^2.3.15",
+    "turf-point": "^2.0.1",
+    "turf-polygon": "^1.0.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Fabien Del Olmo",
+  "license": "ISC"
+}

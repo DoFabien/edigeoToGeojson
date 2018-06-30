@@ -1,0 +1,175 @@
+{
+    "COMMUNE_id": {
+        "table": "EDI_COMMUNE",
+        "att": {
+            "IDU_id": {
+                "name": "commune_id",
+                "fct": "idcommune"
+            },
+            "TEX2_id": {
+                "name": "label"
+            }
+        }
+    },
+    "SECTION_id": {
+        "table": "EDI_SECTION",
+        "att": {
+            "IDU_id": {
+                "name": "section_id",
+                "fct": "idsection"
+            },
+            "NUM_SECTION": {
+                "name": "num_section"
+            },
+            "PREFIX_SECTION": {
+                "name": "prefix_section"
+            },
+            "TEX_id": {
+                "name": "label"
+            },
+            "COMMUNE_ID": {
+                "name": "commune_id"
+            }
+        }
+    },
+    "SUBDSECT_id": {
+        "table": "EDI_SUBSECTION",
+        "att": {
+            "IDU_id": {
+                "name": "subsection_id",
+                "fct": "idsubsection"
+            },
+            "NUM_SUBSECTION": {
+                "name": "num_subsection"
+            },
+            "COPL_id": {
+                "name": "COPL_id"
+            },
+            "DEDI_id": {
+                "name": "DEDI_id"
+            },
+            "DIS_id": {
+                "name": "DIS_id"
+            },
+            "DRED_id": {
+                "name": "DRED_id"
+            },
+            "EOR_id": {
+                "name": "EOR_id"
+            },
+            "ICL_id": {
+                "name": "ICL_id",
+                "fct": "toNumber"
+            },
+            "INP_id": {
+                "name": "INP_id"
+            },
+            "QUPL_id": {
+                "name": "QUPL_id"
+            },
+            "SECTION_ID": {
+                "name": "section_id"
+            },
+            "COMMUNE_ID": {
+                "name": "commune_id"
+            }
+        }
+    },
+    "LIEUDIT_id": {
+        "table": "EDI_LIEUDIT",
+        "att": {
+            "TEX_id": {
+                "name": "label"
+            }
+        }
+    },
+    "PARCELLE_id": {
+        "table": "EDI_PARCELLE",
+        "att": {
+            "IDU_id": {
+                "name": "parcelle_id",
+                "fct": "idParcelle"
+            },
+            "NUM_PARCELLE": {
+                "name": "num_parcelle"
+            },
+            "INDP_id": {
+                "name": "INDP_id"
+            },
+            "SUPF_id": {
+                "name": "superficie",
+                "fct": "toNumber"
+            },
+            "TEX_id": {
+                "name": "label"
+            },
+            "SUBSECTION_ID": {
+                "name": "subsection_id"
+            },
+            "SECTION_ID": {
+                "name": "section_id"
+            },
+            "COMMUNE_ID": {
+                "name": "commune_id"
+            }
+        }
+    },
+    "SUBDFISC_id": {
+        "table": "EDI_SUF",
+        "att": {
+            "IDU_id": {
+                "name": "id"
+            },
+            "objet_id": {
+                "name": "objet_id"
+            },
+            "TEX_id": {
+                "name": "label"
+            },
+            "PARCELLE_ID": {
+                "name": "parcelle_id"
+            }
+        }
+    },
+    "BATIMENT_id": {
+        "table": "EDI_BATIMENT",
+        "att": {
+            "DUR_id": {
+                "name": "dur"
+            }
+        }
+    },
+    "TSURF_id": {
+        "table": "EDI_SURF",
+        "att": {
+            "SYM_id": {
+                "name": "sym_id"
+            }
+        }
+    },
+
+
+
+    "SUBDFISC_PARCELLE": {
+        "table": "EDI_REL_SUF_PARCELLE",
+        "att": {
+            "contenu": {
+                "name": "suf_id"
+            },
+            "contenant": {
+                "name": "parcelle_id"
+            }
+        }
+    },
+    "BATIMENT_PARCELLE": {
+        "table": "EDI_REL_BATIMENT_PARCELLE",
+        "att": {
+            "contenant": {
+                "name": "parcelle_id"
+            },
+            "contenu": {
+                "name": "batiment_id"
+            }
+        }
+    }
+}

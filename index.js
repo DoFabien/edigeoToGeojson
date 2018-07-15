@@ -12,32 +12,12 @@ const cryptography = require("cryptography");
 
 
 let options = {
-    toWgs84: false,
     geomHash: false,
     filter: true
 }
 
 
 const sc_config = require("./schema.default.json")
-
-//projections possible
-const projections = {
-    "LAMB93": { "epsg": 2154, "proj4": "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC42": { "epsg": 3942, "proj4": "+proj=lcc +lat_1=41.25 +lat_2=42.75 +lat_0=42 +lon_0=3 +x_0=1700000 +y_0=1200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC43": { "epsg": 3943, "proj4": "+proj=lcc +lat_1=42.25 +lat_2=43.75 +lat_0=43 +lon_0=3 +x_0=1700000 +y_0=2200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC44": { "epsg": 3944, "proj4": "+proj=lcc +lat_1=43.25 +lat_2=44.75 +lat_0=44 +lon_0=3 +x_0=1700000 +y_0=3200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC45": { "epsg": 3945, "proj4": "+proj=lcc +lat_1=44.25 +lat_2=45.75 +lat_0=45 +lon_0=3 +x_0=1700000 +y_0=4200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC46": { "epsg": 3946, "proj4": "+proj=lcc +lat_1=45.25 +lat_2=46.75 +lat_0=46 +lon_0=3 +x_0=1700000 +y_0=5200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC47": { "epsg": 3947, "proj4": "+proj=lcc +lat_1=46.25 +lat_2=47.75 +lat_0=47 +lon_0=3 +x_0=1700000 +y_0=6200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC48": { "epsg": 3948, "proj4": "+proj=lcc +lat_1=47.25 +lat_2=48.75 +lat_0=48 +lon_0=3 +x_0=1700000 +y_0=7200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC49": { "epsg": 3949, "proj4": "+proj=lcc +lat_1=48.25 +lat_2=49.75 +lat_0=49 +lon_0=3 +x_0=1700000 +y_0=8200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "RGF93CC50": { "epsg": 3950, "proj4": "+proj=lcc +lat_1=49.25 +lat_2=50.75 +lat_0=50 +lon_0=3 +x_0=1700000 +y_0=9200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" },
-    "GUAD48UTM20": { "epsg": 2070, "proj4": "+proj=utm +zone=20 +ellps=intl +units=m +no_defs" },
-    "MART38UTM20": { "epsg": 2973, "proj4": "+proj=utm +zone=20 +ellps=intl +units=m +no_defs" },
-    "RGFG95UTM22": { "epsg": 2972, "proj4": "+proj=utm +zone=22 +ellps=GRS80 +towgs84=2,2,-2,0,0,0,0 +units=m +no_defs" },
-    "RGR92UTM": { "epsg": 2975, "proj4": "+proj=utm +zone=40 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs" }
-}
-
 
 
 const firstPointIsInPolygon = function (poly1, poly2) {
@@ -50,15 +30,6 @@ const firstPointIsInPolygon = function (poly1, poly2) {
         return false;
     }
 
-}
-
-const toWgs84 = function (proj_output, lnglat) {
-    const WGS84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
-    const result = proj4(projections[proj_output].proj4, WGS84, lnglat);
-    const precision = 7; // 7 chiffres après la virgule suffisant, ~ 1 cm
-    result[0] = Math.round(result[0] * Math.pow(10, precision)) / Math.pow(10, precision);
-    result[1] = Math.round(result[1] * Math.pow(10, precision)) / Math.pow(10, precision);
-    return result;
 }
 
 const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = null, qualite = null) {
@@ -102,7 +73,6 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
         const coord_noeud = String(array_RTYSA_ligne_face[5]).split(":")[1];
         const extract_coord = coord_noeud.match(/[0-9-\.]+/g);
         let coords = Array(parseFloat(extract_coord[0]), parseFloat(extract_coord[1]));//[lng,lat];
-        if (options.toWgs84) coords = toWgs84(projection, coords);
 
         PNOs[id_noeud] = { coords: coords, geometryGeoJson: { "type": "Point", "coordinates": coords } };
     };
@@ -549,7 +519,6 @@ const extract_coords_arc = function (array_ligne, projection) {
             const coord_brute = split[1];
             const extract_coord = coord_brute.match(/[0-9-\.]+/g);
             let coords_lng_lat = Array(parseFloat(extract_coord[0]), parseFloat(extract_coord[1]));//[lng,lat];
-            if (options.toWgs84) coords_lng_lat = toWgs84(projection, coords_lng_lat); //toWgs84 en 4326
             coords.push(coords_lng_lat);
         }
     }
@@ -708,7 +677,7 @@ const toGeojson = function (bufferData, dep, opt) {
     const crs = {
         "type": "EPSG",
         "properties": {
-            "code": (options.toWgs84 ? 4326 : projections[projectionCode].epsg )
+            "code": (projections[projectionCode].epsg )
         }
     }
 

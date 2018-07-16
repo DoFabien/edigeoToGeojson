@@ -43,29 +43,32 @@
                 "name": "num_subsection"
             },
             "COPL_id": {
-                "name": "COPL_id"
+                "name": "copl"
             },
             "DEDI_id": {
-                "name": "DEDI_id"
+                "name": "dedi",
+                "fct": "toDate"
             },
             "DIS_id": {
-                "name": "DIS_id"
+                "name": "dis",
+                "fct": "toDate"
             },
             "DRED_id": {
-                "name": "DRED_id"
+                "name": "dred",
+                "fct": "toDate"
             },
             "EOR_id": {
-                "name": "EOR_id"
+                "name": "eor"
             },
             "ICL_id": {
-                "name": "ICL_id",
+                "name": "icl",
                 "fct": "toNumber"
             },
             "INP_id": {
-                "name": "INP_id"
+                "name": "inp"
             },
             "QUPL_id": {
-                "name": "QUPL_id"
+                "name": "qupl"
             },
             "SECTION_ID": {
                 "name": "section_id"
@@ -94,7 +97,7 @@
                 "name": "num_parcelle"
             },
             "INDP_id": {
-                "name": "INDP_id"
+                "name": "indp"
             },
             "SUPF_id": {
                 "name": "superficie",
@@ -143,7 +146,7 @@
         "table": "EDI_SURF",
         "att": {
             "SYM_id": {
-                "name": "sym_id"
+                "name": "sym"
             }
         }
     },

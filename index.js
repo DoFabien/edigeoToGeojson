@@ -16,6 +16,18 @@ let options = {
     filter: true
 }
 
+const stringToDate = function(dateStr){
+    if (dateStr.trim() === ''){
+        return null;
+    } else if (/^[1-2][0-9][0-9][0-9][0-1][0-9][0-3][0-9]$/.test(dateStr) ) { // YYYYMMDD
+        return dateStr.substr(0,4) + '-' + dateStr.substr(4,2)+ '-' + dateStr.substr(6,2);
+
+    } else if(/^[0-3][0-9]\/[0-1][0-9]\/[1-2][0-9][0-9][0-9]$/.test(dateStr)){ // DD/MM/YYYY
+        return dateStr.substr(6,4) + '-' + dateStr.substr(3,2)+ '-' + dateStr.substr(0,2);
+    }else {
+        return null
+    }
+}
 
 const sc_config = require("./schema.default.json")
 
@@ -428,12 +440,12 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
             feature.properties['annee'] = annee;
 
             if (qualite) {
-                feature.properties['create_date'] = FEAs[o].createDate;
-                feature.properties['update_date'] = FEAs[o].updateDate;
-                feature.properties['type_update'] = FEAs[o].type_update;
-                feature.properties['peren_maj'] = FEAs[o].peren_maj;
+                feature.properties['create_date'] = parseInt(FEAs[o].createDate);
+                feature.properties['update_date'] = stringToDate(FEAs[o].updateDate);
+                feature.properties['type_update'] = parseInt(FEAs[o].type_update);
+                feature.properties['peren_maj'] = parseInt(FEAs[o].peren_maj);
                 feature.properties['tx_changement'] = FEAs[o].tx_changement;
-                feature.properties['date_fin_valid'] = FEAs[o].date_fin_valid;
+                feature.properties['date_fin_valid'] = parseInt(FEAs[o].date_fin_valid);
             }
 
             if (!features[table]) { // si l'objet qui va stocker la table n'existe pas
@@ -451,6 +463,10 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
                             case 'toNumber': // transforme une chaine en number...
                                 value = parseFloat(FEAs[o][a]);
                                 break;
+                            
+                            case 'toDate': // transforme une chaine en  date YYYY-MM-DD...
+                            value = stringToDate(FEAs[o][a]);
+                            break;
 
                             case 'idsection':
                                 FEAs[o]['COMMUNE_ID'] = code_dep + FEAs[o][a].substr(-8, 3);

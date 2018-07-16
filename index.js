@@ -1,5 +1,4 @@
 
-const proj4 = require("proj4");
 const iconv = require('iconv-lite');
 
 const turfPoint = require('turf-point');
@@ -15,6 +14,23 @@ let options = {
     geomHash: false,
     filter: true
 }
+
+const projections = { 
+    "LAMB93": { "epsg": 2154}, 
+    "RGF93CC42": { "epsg": 3942 }, 
+    "RGF93CC43": { "epsg": 3943 }, 
+    "RGF93CC44": { "epsg": 3944 }, 
+    "RGF93CC45": { "epsg": 3945 }, 
+    "RGF93CC46": { "epsg": 3946 }, 
+    "RGF93CC47": { "epsg": 3947 }, 
+    "RGF93CC48": { "epsg": 3948 }, 
+    "RGF93CC49": { "epsg": 3949 }, 
+    "RGF93CC50": { "epsg": 3950 }, 
+    "GUAD48UTM20": { "epsg": 2070 }, 
+    "MART38UTM20": { "epsg": 2973 }, 
+    "RGFG95UTM22": { "epsg": 2972 }, 
+    "RGR92UTM": { "epsg": 2975 } 
+} 
 
 const stringToDate = function(dateStr){
     if (dateStr.trim() === ''){

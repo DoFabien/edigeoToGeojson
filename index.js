@@ -456,7 +456,7 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
             feature.properties['annee'] = annee;
 
             if (qualite) {
-                feature.properties['create_date'] = parseInt(FEAs[o].createDate);
+                feature.properties['create_date'] = stringToDate(FEAs[o].createDate);
                 feature.properties['update_date'] = stringToDate(FEAs[o].updateDate);
                 feature.properties['type_update'] = parseInt(FEAs[o].type_update);
                 feature.properties['peren_maj'] = parseInt(FEAs[o].peren_maj);

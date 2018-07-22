@@ -7,6 +7,7 @@ const turfInside = require('@turf/inside');
 const turfUnion = require('@turf/union');
 const turfPointOnSurface = require('@turf/point-on-surface');
 const cryptography = require("cryptography");
+const generateRingFromArcs = require('./generate-ring-from-arc.js');
 
 
 
@@ -14,7 +15,10 @@ let options = {
     geomHash: false,
     filter: true
 }
-
+let testGeojson = {
+    "type": "FeatureCollection",
+    "features": []
+};
 const projections = { 
     "LAMB93": { "epsg": 2154}, 
     "RGF93CC42": { "epsg": 3942 }, 
@@ -33,7 +37,10 @@ const projections = {
 } 
 
 const stringToDate = function(dateStr){
-    if (dateStr.trim() === ''){
+    if (!dateStr){
+        return null
+    }
+    else if (dateStr.trim() === ''){
         return null;
     } else if (/^[1-2][0-9][0-9][0-9][0-1][0-9][0-3][0-9]$/.test(dateStr) ) { // YYYYMMDD
         return dateStr.substr(0,4) + '-' + dateStr.substr(4,2)+ '-' + dateStr.substr(6,2);
@@ -197,7 +204,7 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
     for (let id_lnk in LNKs) {
         //si c'est une face, c'est spécial, on rempli le PFEs
         // Objet_156551 // 
-
+  
         if (LNKs[id_lnk].type == "ID_S_RCO_FAC_DRTE" || LNKs[id_lnk].type == "ID_S_RCO_FAC_GCHE") {
             const face = LNKs[id_lnk].contenant
 
@@ -214,111 +221,14 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
     }
 
 
-    // on lui donne la liste des arcs => liste de polygons fermés
-    const generatePolygonsFromArcs = function (_arcs, id_face) {
-        const arcs = JSON.parse(JSON.stringify(_arcs));
-        const polygons = [];
-
-        // Les arcs qui boucles sur eux même  => Polygons puis on les supprimes
-        for (let i = arcs.length - 1; i >= 0; i--) {
-            if (arcs[i][0].toString() == arcs[i][arcs[i].length - 1].toString()) {
-    
-                /* 
-                Un polygon doit avoir au moins 4 pairs de coordonnées ( la 1ere =  la dernière)
-                Sinon c'est juste une ligne ...
-                */
-                if (arcs[i].length > 3){
-                    polygons.push(arcs[i]);
-                } else {
-                    console.log('WTF ? un polygon à 2 points ?!')
-                }
-               
-                arcs.splice(i, 1);
-            }
-        }
-
-
-        const relArc = [];
-        for (let i = 0; i < arcs.length; i++) {
-            for (let j = 0; j < arcs.length; j++) {
-                if (j != i) {
-                    let cloneIReverse = [];
-                    cloneIReverse = arcs[i].slice(); // on clone le tableau de coordonnée pour que le reverse ne touche pas l'original
-                    cloneIReverse = cloneIReverse.reverse();
-
-                    if (arcs[i][arcs[i].length - 1].toString() == arcs[j][0].toString()) {
-                        relArc.push({ endOf: i, startOf: j })
-
-                    // Dans de rare cas, les coordonéees sont pas dans le bon ordre... tsss
-                    } else if (cloneIReverse[cloneIReverse.length - 1].toString() == arcs[j][0].toString() ){
-                        arcs[j] = arcs[j].reverse();
-                        relArc.push({ endOf: i, startOf: j, reverse: true })
-                    }
-                }
-            }
-        }
-
-        function findChainPolygonIndex(relArc) {
-            let res = [relArc[0].endOf, relArc[0].startOf];
-            let o = 0;
-            while (res[0] != res[res.length - 1]) { //for
-                const nextIndex = findNextIndex(relArc, res[res.length - 1])
-                res.push(nextIndex);
-                o++;
-
-                if (o > relArc.length) {
-                    polygons.push([])
-                    return;
-                }
-            }
-
-            res.pop();
-            let ring = arcs[res[0]].slice(0);
-            for (let k = 1; k < res.length; k++) {
-                ring.pop();
-                ring = ring.concat(arcs[res[k]]) // clone suppression de la derniere coords  + c
-            }
-
-            polygons.push(ring);
-            return res;
-        }
-
-        function findNextIndex(relArc, startOf) {
-            for (let i = 0; i < relArc.length; i++) {
-                if (relArc[i].endOf == startOf) {
-                    return relArc[i].startOf
-                }
-            }
-            return null;
-        }
-
-
-        const orderOfArcs = [];
-        while (relArc.length > 0) {
-
-            const tpmp = findChainPolygonIndex(relArc);
-            if (!tpmp) return [];
-
-            orderOfArcs.push(tpmp);
-            for (let i = relArc.length - 1; i >= 0; i--) {
-                if (tpmp.indexOf(relArc[i].endOf) != -1) {
-                    relArc.splice(i, 1);
-                }
-            }
-        }
-        return polygons;
-    }
-
-
     /*On chaine les géométries des polygones*/
-    let chainageFace = function () {
         for (const id_face in PFEs) {
 
             let arcsOfFace = [];
             arcsOfFace = arcsOfFace.concat(PFEs[id_face].coords); // tableau avec la face en cours et les arcs qui lui sont associés;
-            
-            const listOfPolygons = generatePolygonsFromArcs(arcsOfFace, id_face); // => on a les polygon qui compose la face
 
+            const listOfPolygons = generateRingFromArcs(arcsOfFace, id_face)
+            // TODO : Il faudrait modifier tout ça ... Il faut juste trouver le ring exterieur, les multi polygones c'est ailleurs
             // on cherche quels polygones contient d'autre (multiPolygon, polygon a trou, etc...)
             const rings = [];
             // TODO regarder la ligne d'en dessous, il me semble que c'est un polygon uniquement
@@ -326,8 +236,10 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
                 // console.log(JSON.stringify(listOfPolygons));
                 const indexFinded = [];
                 for (let i = 0; i < listOfPolygons.length; i++) {
+                   
                     for (let j = 0; j < listOfPolygons.length; j++) {
                         if (i !== j) {
+                           
                             if (firstPointIsInPolygon(listOfPolygons[i], listOfPolygons[j])) { // le polygon I est contenu par un autre
                                 if (indexFinded.indexOf(i) == -1) {
                                     if (!rings[j.toString()]) rings[j.toString()] = [];
@@ -377,16 +289,15 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
                 }
             }
         }
-    }
 
-    chainageFace();
     //on reparcours la table LINK pour faire les relations entre FEA et [PAR,PFE,PNO] => La table FEA est la table finale!
 
     for (const id_lnk2 in LNKs) {
         if (LNKs[id_lnk2].contenu_type == 'FEA') {
 
             if (LNKs[id_lnk2].contenant_type == "PFE") { // Dans le Cas FEA/PFE => Geometrie dans FEA
-
+                // if (LNKs[id_lnk2].contenu == 'Objet_214612'){console.log(LNKs[id_lnk2]);} // help
+        
                 if (LNKs[id_lnk2].contenant.length > 1) { // => C'est un multi polygon! Union des polygones qui le compose
                     let multiPoly = { "type": "Feature", "properties": {}, "geometry": PFEs[LNKs[id_lnk2].contenant[0]].geometryGeoJson };
                     for (let q = 1; q < LNKs[id_lnk2].contenant.length; q++) {
@@ -431,6 +342,7 @@ const edigeo2Json = function (data_VEC, projection, code_dep, annee, _options = 
 
     for (const o in LNKs) {
         LNKs[o].contenant = LNKs[o].contenant[0];
+
         if (sc_config[LNKs[o].type]) { // => C'est dans le schema, on extrait les attributs et on l'extrait
             const table = sc_config[LNKs[o].type].table;
             const att = sc_config[LNKs[o].type].att;
@@ -776,7 +688,7 @@ const toGeojson = function (bufferData, dep, opt) {
         indexIds);
 
     }
-
+    // console.log(JSON.stringify(testGeojson));
     return result;
 }
 

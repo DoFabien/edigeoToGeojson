@@ -18,15 +18,15 @@ decompress('/home/fabien/Téléchargements/dep38/38149/edigeo-cc-38149000AD01.ta
         }
     }
 
-    const geojsons = edigeoTogeojson(bufferData, '38', { filter: false, geomHash: false });
-
-    let features  = geojsons['PARCELLE_id'].features;
-    fs.writeFileSync('fixture/test_result.geojson', JSON.stringify(geojsons['PARCELLE_id']))
-    for (let i = 0; i < features.length; i++){
-        let feat = features[i];
-        if (!feat.geometry){
-            console.log(feat);
-        }
-    }
+    const geojsons = edigeoTogeojson(bufferData, '38', { filter: true, geomHash: true });
+    // console.log(geojsons);
+    // let features  = geojsons['PARCELLE_id'].features;
+    // fs.writeFileSync('fixture/test_result.geojson', JSON.stringify(geojsons['PARCELLE_id']))
+    // for (let i = 0; i < features.length; i++){
+    //     let feat = features[i];
+    //     if (!feat.geometry){
+    //         console.log(feat);
+    //     }
+    // }
     
 });

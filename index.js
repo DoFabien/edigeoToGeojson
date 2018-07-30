@@ -551,7 +551,8 @@ const getEncoding = function (THF_string) {
 
 // relations entre les parcelles et les batiments/suf
 // => grace à indexIds on divise le temps d'execution par 2 par rapport au find de lodash
-const getRels = function (JSONSufParcelle, JSONBatimentParcelle, GeoJsonParcelle, GeoJsonSuf, GeoJsonBatiment, indexIds) {
+const getRels = function (JSONSufParcelle, JSONBatimentParcelle, GeoJsonParcelle, GeojsonSection, GeoJsonSuf, GeoJsonBatiment, indexIds, code_dep) {
+
     //SUF PARCELLE
     if (JSONSufParcelle && GeoJsonParcelle && GeoJsonParcelle.features) {
         for (let i = 0; i < JSONSufParcelle.length; i++) {
@@ -577,27 +578,32 @@ const getRels = function (JSONSufParcelle, JSONBatimentParcelle, GeoJsonParcelle
         }
     }
 
-    //BATIMENT PARCELLE
+    //BATIMENT PARCELLE, c'est une relation Many To Many ...
     if (JSONBatimentParcelle && GeoJsonParcelle && GeoJsonParcelle.features) {
+        // on modifie l'id du batiment en s'appuyant sur l'objectid => codeDep+ id
+        const section_id = GeojsonSection.features[0].properties.section_id;
+        for (let i = 0; i < GeoJsonBatiment.features.length; i++){
+            // l'id du batiment est l'id de la section + son objet id
+            const numberObjectId = GeoJsonBatiment.features[i].properties.objectid.split('_')[1];
+            const id_bati = section_id  + '_' + numberObjectId;
+            GeoJsonBatiment.features[i].properties['batiment_id'] = id_bati;
+        }
         for (let i = 0; i < JSONBatimentParcelle.length; i++) {
+            // l'id du batiment est l'id de la section + son objet id
+            const numberObjectId = JSONBatimentParcelle[i].batiment_id.split('_')[1];
+            const id_bati = section_id  + '_' + numberObjectId
+            JSONBatimentParcelle[i]['batiment_id'] = id_bati
+  
             const parcelleIdx = indexIds['EDI_PARCELLE'].indexOf(JSONBatimentParcelle[i].parcelle_id);
             const parcelle = (parcelleIdx == -1) ? undefined : GeoJsonParcelle.features[parcelleIdx] ; 
-
-            const batimentIdx = indexIds['EDI_BATIMENT'].indexOf(JSONBatimentParcelle[i].batiment_id);
-            const batiment = (batimentIdx == -1) ? undefined : GeoJsonBatiment.features[batimentIdx] ;
-
-            try {
-                const pointOnSuf = turfPointOnSurface(batiment);
-                if (parcelle.geometry && turfInside(pointOnSuf, parcelle)) {
-                    batiment.properties['parcelle_id'] = parcelle.properties.parcelle_id;
-                }
-            } catch (error) {
-                console.log(error);
-            }
+            JSONBatimentParcelle[i]['parcelle_id'] = parcelle.properties.parcelle_id;
         }
+        //  console.log(JSONBatimentParcelle);
     }
 
-    return { GeoJsonSuf: GeoJsonSuf, GeoJsonBatiment: GeoJsonBatiment }
+    JSONBatimentParcelle = {'type':'json', 'data': JSONBatimentParcelle};
+    JSONSufParcelle = {'type':'json', 'data': JSONSufParcelle}
+    return { GeoJsonSuf: GeoJsonSuf, GeoJsonBatiment: GeoJsonBatiment, JSONBatimentParcelle: JSONBatimentParcelle }
 }
 
 const toGeojson = function (bufferData, dep, opt) {
@@ -644,7 +650,7 @@ const toGeojson = function (bufferData, dep, opt) {
                 if (result[k]['features']){
 
                     for (let i =0; i < res[k].length; i++){
-                        if (options.geomHash){
+                        if (options.geomHash || options.filter){
                             if (res[k][i].geometry){
                                 const geomHash = cryptography.hashSync({
                                     data : JSON.stringify(res[k][i].geometry),
@@ -683,12 +689,12 @@ const toGeojson = function (bufferData, dep, opt) {
         const relSufBatiment = getRels(result['EDI_REL_SUF_PARCELLE'],
         result['EDI_REL_BATIMENT_PARCELLE'],
         result['EDI_PARCELLE'],
+        result['EDI_SECTION'],
         result['EDI_SUF'],
         result['EDI_BATIMENT'],
-        indexIds);
-
+        indexIds, dep);
+        result['EDI_REL_BATIMENT_PARCELLE'] =  relSufBatiment['JSONBatimentParcelle'];
     }
-    // console.log(JSON.stringify(testGeojson));
     return result;
 }
 

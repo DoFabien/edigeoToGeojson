@@ -30,7 +30,7 @@ const projections = {
     "RGF93CC48": { "epsg": 3948 }, 
     "RGF93CC49": { "epsg": 3949 }, 
     "RGF93CC50": { "epsg": 3950 }, 
-    "GUAD48UTM20": { "epsg": 2070 }, 
+    "GUAD48UTM20": { "epsg": 2970 }, 
     "MART38UTM20": { "epsg": 2973 }, 
     "RGFG95UTM22": { "epsg": 2972 }, 
     "RGR92UTM": { "epsg": 2975 } 

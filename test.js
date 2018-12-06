@@ -2,10 +2,9 @@ const decompress = require('decompress');
 const edigeoTogeojson = require('./index.js');
 const fs = require('fs');
 
+decompress('./fixture/edigeo-cc-38151000BE01.tar.bz2').then(files => {
 
-decompress('/home/fabien/Téléchargements/dep38/38149/edigeo-cc-38149000AD01.tar.bz2').then(files => {
-
-    const bufferData = { 'THF': undefined, 'QAL': undefined, 'GEO': undefined, 'VEC': [] }
+    const bufferData = { 'THF': undefined, 'QAL': undefined, 'GEO': undefined, 'SCD':undefined, 'VEC': [] }
     for (let i = 0; i < files.length; i++) {
         if (/\.THF$/.test(files[i].path)) {
             bufferData.THF = files[i].data;
@@ -15,18 +14,19 @@ decompress('/home/fabien/Téléchargements/dep38/38149/edigeo-cc-38149000AD01.ta
             bufferData.QAL = files[i].data;
         } else if (/\.GEO$/.test(files[i].path)) {
             bufferData.GEO = files[i].data;
+        } else if (/\.SCD$/.test(files[i].path)) {
+            bufferData.SCD = files[i].data;
         }
     }
 
-    const geojsons = edigeoTogeojson(bufferData, '38', { filter: true, geomHash: true });
-    // console.log(geojsons);
-    // let features  = geojsons['PARCELLE_id'].features;
-    // fs.writeFileSync('fixture/test_result.geojson', JSON.stringify(geojsons['PARCELLE_id']))
-    // for (let i = 0; i < features.length; i++){
-    //     let feat = features[i];
-    //     if (!feat.geometry){
-    //         console.log(feat);
-    //     }
-    // }
-    
+    console.time('Time')
+    const data = edigeoTogeojson(bufferData);
+    console.timeEnd('Time')
+
+    for (const name in data.relations){
+        fs.writeFileSync(`./fixture/rels/${name}.json`, JSON.stringify(data.relations[name]));
+    }
+     for (const name in data.geojsons){
+        fs.writeFileSync(`./fixture/${name}.geojson`, JSON.stringify(data.geojsons[name]));
+    }
 });

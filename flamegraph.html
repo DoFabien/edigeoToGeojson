@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>flamebearer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+    html, body { height: 100%; }
+    body { font: 16px "Helvetica Neue", sans-serif; margin: 0; }
+    body.hover { background: #cfc; }
+    h1 { font-size: 30px; margin: 30px 30px 15px; }
+    h1 a { color: black; text-decoration: none; }
+    h1 a:hover { text-decoration: underline; }
+    #fire-icon { fill: #f53; width: 26px; height: 26px; vertical-align: -1px; }
+    #intro { margin: 0 30px; }
+    code { font-size: 13px; color: #444; }
+    code span { color: #aaa; }
+    #canvas { width: 100%; }
+    #controls { display: none; }
+    #search { margin-right: 10px; }
+    #highlight { position: absolute; pointer-events: none; background: #ffffff40; }
+    .loaded #intro { display: none; }
+    .loaded #header { display: flex; align-items: center; flex-flow: row wrap; padding: 7px 10px; }
+    .loaded h1 { font-size: 22px; margin: 0 auto 0 0; flex-shrink: 0; }
+    .loaded #fire-icon { width: 20px; height: 20px; }
+    .loaded #controls { display: block; flex-shrink: 0; }
+    #tooltip { position: absolute; pointer-events: none; background: #ffffff; white-space: nowrap; box-shadow: 1px 2px 4px 0px rgba(0,0,0,0.3); border-radius: 2px; padding: 3px 5px; font: 12px Tahoma, sans-serif; display: none; }
+    #tooltip .path { color: #888; font-size: 11px; }
+    #tooltip .time { color: #4a4; }
+</style>
+</head>
+<body>
+
+<div id="header">
+    <h1><svg id="fire-icon" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 15 15" style="enable-background:new 0 0 15 15;" xml:space="preserve"><path d="M7.5,0.5L5,4.5l-1.5-2 C2.9452,3.4753,0.8036,5.7924,0.8036,8.3036C0.8036,12.002,3.8017,15,7.5,15s6.6964-2.998,6.6964-6.6964 c0-2.5112-2.1416-4.8283-2.6964-5.8036l-1.5,2L7.5,0.5z M7.5,7c0,0,2.5,2.5618,2.5,4.5c0,0.8371-0.8259,2-2.5,2S5,12.3371,5,11.5 C5,9.6283,7.5,7,7.5,7z"/></svg> <a href="https://github.com/mapbox/flamebearer">flamebearer</a></h1>
+    <div id="controls">
+        <input id="search" placeholder="Search..." />
+        <button id="reset">Reset view</button>
+    </div>
+</div>
+<div id="highlight"></div>
+<div id="tooltip"></div>
+<div id="intro"><!--  --></div>
+<canvas id="canvas" height="0"></canvas>
+
+<!--  -->
+<script>'use strict';
+
+const introEl = document.getElementById('intro');
+const searchEl = document.getElementById('search');
+const highlightEl = document.getElementById('highlight');
+const tooltipEl = document.getElementById('tooltip');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let names, levels, numTicks;
+
+names = ["(unknown)","~(anonymous) bootstrap_node.js:10:10","~startup bootstrap_node.js:24:19","~setupGlobalVariables bootstrap_node.js:268:32","~NativeModule.require bootstrap_node.js:533:34","~NativeModule.compile bootstrap_node.js:601:44","~(anonymous) util.js:1:11","~NativeModule.cache bootstrap_node.js:621:42","(C++) v8::internal::Runtime_KeyedStoreIC_Miss(int, v8::internal::Object**, v8::internal::Isolate*)","(stub) CEntryStub","(unknown)","~setupGlobalConsole bootstrap_node.js:323:30","~(anonymous) module.js:1:11","~(anonymous) internal/url.js:1:11","(C++) v8::internal::Runtime_DefineDataPropertyInLiteral(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::Heap::AllocateFixedArrayWithFiller(int, v8::internal::PretenureFlag, v8::internal::Object*)","~(anonymous) internal/loader/Loader.js:1:11","~runInThisContext bootstrap_node.js:512:28","~Script.runInThisContext vm.js:46:45","(C++) node::(anonymous namespace)::ContextifyScript::RunInThisContext(v8::FunctionCallbackInfo<v8::Value> const&)","~(anonymous) internal/loader/ModuleRequest.js:1:1","(C++) v8::internal::Runtime_InterpreterNewClosure(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::Factory::NewNoClosuresCell(v8::internal::Handle<v8::internal::Object>)","~(anonymous) console.js:1:11","~getStdout internal/process/stdio.js:12:21","~createWritableStdioStream internal/process/stdio.js:142:35","~WriteStream tty.js:62:21","~Socket net.js:189:16","~Duplex _stream_duplex.js:47:16","~Writable _stream_writable.js:194:18","(C++) v8::internal::Runtime_StoreIC_Miss(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::FeedbackVector::GetKind(v8::internal::FeedbackSlot) const","~getStderr internal/process/stdio.js:27:21","~addListener events.js:296:58","~_addListener events.js:233:22","(C++) v8::internal::Heap::AllocateMap(v8::internal::InstanceType, int, v8::internal::ElementsKind)","~Module.runMain module.js:692:26","~Module._load module.js:448:24","~tryModuleLoad module.js:503:23","~Module.load module.js:557:33","~Module._extensions..js module.js:662:37","~Module._compile module.js:610:37","~(anonymous) ./test.js:1:11","~require internal/module.js:8:19","~Module.require module.js:594:36","~(anonymous) ./node_modules/decompress/index.js:1:11","~(anonymous) ./node_modules/graceful-fs/graceful-fs.js:1:11","~Module._resolveFilename module.js:515:35","~Module._findPath module.js:182:28","(builtin) KeyedLoadIC_Megamorphic","(C++) v8::internal::Map::RawCopy(v8::internal::Handle<v8::internal::Map>, int)","~(anonymous) ./node_modules/decompress-tar/index.js:1:11","~resolve path.js:1156:28","~normalizeStringPosix path.js:101:30","(builtin) StringPrototypeCharCodeAt","~(anonymous) ./node_modules/tar-stream/index.js:1:11","~(anonymous) ./node_modules/tar-stream/extract.js:1:11","(builtin) ArgumentsAdaptorTrampoline","~(anonymous) ./node_modules/bl/bl.js:1:11","~tryExtensions module.js:170:23","~tryFile module.js:155:17","~toRealPath module.js:163:20","~realpathSync fs.js:1579:40","(builtin) LoadICProtoArray","~(anonymous) ./node_modules/readable-stream/duplex.js:1:11","~(anonymous) ./node_modules/readable-stream/readable.js:1:11","~fs.readFileSync fs.js:548:27","(builtin) Call_ReceiverIsAny","~(anonymous) ./node_modules/readable-stream/lib/_stream_readable.js:1:11","~tryPackage module.js:135:20","~readPackage module.js:113:21","(C++) v8::internal::Builtin_JsonParse(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::LayoutDescriptor::New(v8::internal::Handle<v8::internal::Map>, v8::internal::Handle<v8::internal::DescriptorArray>, int)","(bytecode) ~LdaNamedProperty","(C++) v8::internal::Runtime_KeyedGetProperty(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::FixedArray::set(int, v8::internal::Object*, v8::internal::WriteBarrierMode)","~(anonymous) ./node_modules/tar-stream/headers.js:1:11","~(anonymous) ./node_modules/buffer-alloc/index.js:1:11","(C++) v8::internal::BinarySearch","~join native array.js:287:46","~InnerArrayJoin native array.js:274:24","~Join native array.js:119:14","~DoJoin native array.js:94:16","(C++) v8::internal::Runtime_StringBuilderJoin(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) void v8::internal::String::WriteToFlat<unsigned short>(v8::internal::String*, unsigned short*, int, int)","~(anonymous) ./node_modules/tar-stream/pack.js:1:11","~(anonymous) ./node_modules/end-of-stream/index.js:1:11","normalizeStringPosix path.js:101:30","~(anonymous) ./node_modules/decompress-tarbz2/index.js:1:11","~(anonymous) ./node_modules/seek-bzip/lib/index.js:1:11","~Module._extensions..json module.js:669:39","~tryCreateBuffer fs.js:524:25","~Buffer.allocUnsafe buffer.js:252:30","~allocate buffer.js:281:18","~FastBuffer buffer.js:37:14","(bytecode) ~Return","~(anonymous) ./node_modules/decompress-targz/index.js:1:11","~(anonymous) zlib.js:1:11","(C++) v8::internal::Runtime_KeyedLoadIC_Miss(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::FeedbackNexus::ConfigureMonomorphic(v8::internal::Handle<v8::internal::Name>, v8::internal::Handle<v8::internal::Map>, v8::internal::Handle<v8::internal::Object>)","~(anonymous) ./node_modules/decompress-unzip/index.js:1:11","~(anonymous) ./node_modules/get-stream/index.js:1:11","(builtin) StringPrototypeSlice","~(anonymous) ./node_modules/yauzl/index.js:1:11","~(anonymous) ./node_modules/fd-slicer/index.js:1:11","~getOptions fs.js:64:20","(bytecode) ~TestEqualStrict","~(anonymous) ./index.js:1:11","~(anonymous) ./generate-ring-from-arc.js:1:11","~(anonymous) ./node_modules/@turf/turf/turf.js:1:11","~earthRadius ./node_modules/@turf/turf/turf.js:1:73","~(anonymous) ./node_modules/@turf/turf/turf.js:5:19","(C++) v8::internal::Runtime_CreateObjectLiteral(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::JSObject::MigrateToMap(v8::internal::Handle<v8::internal::JSObject>, v8::internal::Handle<v8::internal::Map>, int)","(builtin) StoreICStrict_Uninitialized","~(anonymous) ./node_modules/@turf/turf/turf.js:40011:46","(C++) v8::internal::Builtin_ObjectPrototypeSetProto(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::TransitionsAccessor::PutPrototypeTransition(v8::internal::Handle<v8::internal::Object>, v8::internal::Handle<v8::internal::Map>)","(builtin) PromiseHandle","~read.then.buf ./node_modules/decompress/index.js:95:19","~extractFile ./node_modules/decompress/index.js:22:21","~runPlugins ./node_modules/decompress/index.js:14:20","(builtin) ArrayMap","~Promise.all.opts.plugins.map.x ./node_modules/decompress/index.js:19:38","~input ./node_modules/decompress-tar/index.js:6:24","~module.exports.input ./node_modules/file-type/index.js:3:18","~Uint8Array native typedarray.js:158:31","~Uint8ArrayConstructByTypedArray native typedarray.js:144:41","(C++) v8::internal::Runtime_TypedArrayGetBuffer(int, v8::internal::Object**, v8::internal::Isolate*)","~input ./node_modules/decompress-tarbz2/index.js:8:24","~Bunzip.decode ./node_modules/seek-bzip/lib/index.js:499:25","~Bunzip._init_block ./node_modules/seek-bzip/lib/index.js:91:40","~Bunzip._get_next_block ./node_modules/seek-bzip/lib/index.js:121:44","~BitReader.read ./node_modules/seek-bzip/lib/bitreader.js:48:36","(stub) StoreFastElementStub","(bytecode) ~Wide","BitReader.read ./node_modules/seek-bzip/lib/bitreader.js:48:36","(bytecode) ~ToNumber.Wide","(bytecode) ~LdaKeyedProperty.Wide","Bunzip._get_next_block ./node_modules/seek-bzip/lib/index.js:121:44","(IC) A keyed load IC from the snapshot","(IC) A keyed store IC from the snapshot","(bytecode) ~ShiftLeftSmi.Wide","(bytecode) ~Inc.Wide","(C++) v8::internal::DescriptorArray::Append(v8::internal::Descriptor*)","~Bunzip._read_bunzip ./node_modules/seek-bzip/lib/index.js:401:41","~CRC32.updateCRCRun ./node_modules/seek-bzip/lib/crc32.js:97:33","Bunzip._read_bunzip ./node_modules/seek-bzip/lib/index.js:401:41","(bytecode) ~Sub","(bytecode) ~JumpLoop","mtf ./node_modules/seek-bzip/lib/index.js:49:19","(bytecode) ~LdaZero","(bytecode) ~Dec","(lib) /lib/x86_64-linux-gnu/libc-2.27.so","CRC32.updateCRCRun ./node_modules/seek-bzip/lib/crc32.js:97:33","~_tickCallback internal/process/next_tick.js:152:25","~_combinedTickCallback internal/process/next_tick.js:130:33","~endReadableNT ./node_modules/readable-stream/lib/_stream_readable.js:1005:23","~emit events.js:156:44","~emitNone events.js:104:18","~stream.on ./node_modules/decompress-tar/index.js:22:20","~onunlock ./node_modules/tar-stream/extract.js:71:27","~oncontinue ./node_modules/tar-stream/extract.js:67:29","~Extract._continue ./node_modules/tar-stream/extract.js:209:40","~Extract._write ./node_modules/tar-stream/extract.js:217:37","~ondrain ./node_modules/tar-stream/extract.js:85:26","~slice buffer.js:966:40","(builtin) TypedArrayConstructByArrayBuffer","(builtin) Divide","~onheader ./node_modules/tar-stream/extract.js:120:27","(builtin) CallFunction_ReceiverIsAny","(C++) node::RunMicrotasks(v8::FunctionCallbackInfo<v8::Value> const&)","~decompress.then.files ./test.js:5:61","~toGeojson ./index.js:190:28","~decode ./node_modules/iconv-lite/lib/index.js:30:31","~SBCSDecoder.write ./node_modules/iconv-lite/encodings/sbcs-codec.js:58:39","SBCSDecoder.write ./node_modules/iconv-lite/encodings/sbcs-codec.js:58:39","~getActualite ./index.js:66:31","(builtin) RegExpPrototypeTest","(bytecode) ~CreateRegExpLiteral","(builtin) StringPrototypeSplit","(C++) v8::internal::Runtime_StringSplit(int, v8::internal::Object**, v8::internal::Isolate*)","(bytecode) ~CallProperty1","(C++) v8::internal::Factory::NewProperSubString(v8::internal::Handle<v8::internal::String>, int, int)","getActualite ./index.js:66:31","(C++) v8::internal::Heap::AllocateRawOneByteString(int, v8::internal::PretenureFlag)","~parseVEC ./parseVEC.js:184:27","(C++) const>, int)","~PAR ./parseVEC.js:42:12","(C++) v8::internal::Runtime_StringEqual(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::String::SlowEquals(v8::internal::Handle<v8::internal::String>, v8::internal::Handle<v8::internal::String>)","(C++) v8::internal::Heap::AllocateWeakCell(v8::internal::HeapObject*)","~corToJsonCoords ./parseVEC.js:1:96","~match native string.js:12:6","(builtin) RegExpPrototypeMatch","~FEA ./parseVEC.js:105:12","(C++) v8::internal::Runtime_SetProperty(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::HashTable<v8::internal::NameDictionary, v8::internal::NameDictionaryShape>::Rehash(v8::internal::NameDictionary*)","~LNK ./parseVEC.js:149:12","(bytecode) ~Star","(bytecode) ~LdaConstant","~PNO ./parseVEC.js:11:12","(C++) v8::internal::Factory::NewJSArrayStorage(v8::internal::Handle<v8::internal::JSArray>, int, int, v8::internal::ArrayStorageAllocationMode)","(C++) v8::internal::Handle<v8::internal::SlicedString> v8::internal::Factory::New<v8::internal::SlicedString>(v8::internal::Handle<v8::internal::Map>, v8::internal::AllocationSpace)","PAR ./parseVEC.js:42:12","LNK ./parseVEC.js:149:12","(C++) v8::internal::StringShape::StringShape(v8::internal::String const*)","FEA ./parseVEC.js:105:12","(C++) v8::internal::IncrementalMarking::RecordWriteSlow(v8::internal::HeapObject*, v8::internal::Object**, v8::internal::Object*)","(C++) v8::internal::String::Flatten(v8::internal::Handle<v8::internal::String>, v8::internal::PretenureFlag)","(C++) v8::internal::Heap::AllocateJSObjectFromMap(v8::internal::Map*, v8::internal::PretenureFlag, v8::internal::AllocationSite*)","(C++) v8::internal::Heap::AllocateRawTwoByteString(int, v8::internal::PretenureFlag)","(C++) v8::internal::Factory::NewFixedArrayWithHoles(int, v8::internal::PretenureFlag)","(bytecode) ~LdaGlobal","~PFE ./parseVEC.js:75:12","(C++) v8::internal::Runtime_NewArray(int, v8::internal::Object**, v8::internal::Isolate*)","(stub) RecordWriteStub","(C++) v8::internal::IncrementalMarking::WhiteToGreyAndPush(v8::internal::HeapObject*)","(C++) v8::internal::FindStringIndicesDispatch(v8::internal::Isolate*, v8::internal::String*, v8::internal::String*, std::vector<int, std::allocator<int> >*, unsigned int)","(C++) v8::internal::Heap::AllocateRaw(int, v8::internal::AllocationSpace, v8::internal::AllocationAlignment)","(C++) v8::internal::Factory::NewRawTwoByteString(int, v8::internal::PretenureFlag)","PNO ./parseVEC.js:11:12","(builtin) NumberParseFloat","(C++) v8::internal::Runtime_StringParseFloat(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::Strtod(v8::internal::Vector<char const>, int)","(C++) v8::internal::String::GetFlatContent()","(builtin) GrowFastSmiOrObjectElements","~parseFtpScpNCo ./parseVEC.js:5:33","(bytecode) ~StaNamedOwnProperty","(C++) v8::internal::HashTable<v8::internal::StringTable, v8::internal::StringTableShape>::FindInsertionEntry(unsigned int)","(C++) v8::internal::StringToDouble(v8::internal::UnicodeCache*, v8::internal::Handle<v8::internal::String>, int, double)","(bytecode) ~TestUndetectable","(C++) v8::internal::RegExpResultsCache::Enter(v8::internal::Isolate*, v8::internal::Handle<v8::internal::String>, v8::internal::Handle<v8::internal::Object>, v8::internal::Handle<v8::internal::FixedArray>, v8::internal::Handle<v8::internal::FixedArray>, v8::internal::RegExpResultsCache::ResultsCacheType)","parseVEC ./parseVEC.js:184:27","(C++) v8::internal::String::ComputeAndSetHash()","(C++) std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)","(C++) v8::internal::String::SlowEquals(v8::internal::String*)","(C++) v8::internal::KeyedGetObjectProperty(v8::internal::Isolate*, v8::internal::Handle<v8::internal::Object>, v8::internal::Handle<v8::internal::Object>)","(builtin) InterpreterEntryTrampoline","(bytecode) ~TestEqual","(builtin) ForInFilter","~generateRingFromPFE ./generate-ring-from-arc.js:118:38","(C++) v8::internal::Builtin_JsonStringify(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::JsonStringifier::ApplyToJsonFunction(v8::internal::Handle<v8::internal::Object>, v8::internal::Handle<v8::internal::Object>)","~generateGeometry ./generate-ring-from-arc.js:15:34","(C++) v8::internal::Runtime_ForInPrepare(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::FixedArray::set(int, v8::internal::Object*)","(C++) v8::internal::Runtime_CopyDataProperties(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::BaseNameDictionary<v8::internal::NameDictionary, v8::internal::NameDictionaryShape>::CollectKeysTo(v8::internal::Handle<v8::internal::NameDictionary>, v8::internal::KeyAccumulator*)","(C++) void std::__introsort_loop<v8::base::AtomicElement<v8::internal::Smi*>*, long, v8::internal::EnumIndexComparator<v8::internal::NameDictionary> >(v8::base::AtomicElement<v8::internal::Smi*>*, v8::base::AtomicElement<v8::internal::Smi*>*, long, v8::internal::EnumIndexComparator<v8::internal::NameDictionary>)","(C++) v8::internal::BaseNameDictionary<v8::internal::NameDictionary, v8::internal::NameDictionaryShape>::EnsureCapacity(v8::internal::Handle<v8::internal::NameDictionary>, int)","(C++) v8::internal::Map::CopyWithField(v8::internal::Handle<v8::internal::Map>, v8::internal::Handle<v8::internal::Name>, v8::internal::Handle<v8::internal::FieldType>, v8::internal::PropertyAttributes, v8::internal::PropertyConstness, v8::internal::Representation, v8::internal::TransitionFlag)","(C++) v8::internal::StringSearch<unsigned char, unsigned char>::BoyerMooreHorspoolSearch(v8::internal::StringSearch<unsigned char, unsigned char>*, v8::internal::Vector<unsigned char const>, int)","(C++) void v8::internal::LookupIterator::NextInternal<false>(v8::internal::Map*, v8::internal::JSReceiver*)","(bytecode) ~ToBooleanLogicalNot","(bytecode) ~Jump","(C++) v8::internal::HashTable<v8::internal::StringTable, v8::internal::StringTableShape>::Rehash(v8::internal::StringTable*)","(C++) v8::internal::Factory::NewJSArray(v8::internal::ElementsKind, int, int, v8::internal::ArrayStorageAllocationMode, v8::internal::PretenureFlag)","(C++) v8::internal::HashTable<v8::internal::StringTable, v8::internal::StringTableShape>::HasSufficientCapacityToAdd(int)","(builtin) StringEqual","(C++) v8::internal::Heap::InitializeJSObjectBody(v8::internal::JSObject*, v8::internal::Map*, int)","(C++) v8::internal::Heap::CopyJSObject(v8::internal::JSObject*, v8::internal::AllocationSite*)","(C++) v8::internal::Factory::NewFixedDoubleArray(int, v8::internal::PretenureFlag)","(bytecode) ~CallProperty2","(C++) v8::internal::LookupIterator::State v8::internal::LookupIterator::LookupInRegularHolder<false>(v8::internal::Map*, v8::internal::JSReceiver*) [clone .part.78]","(builtin) ArrayFilter","(C++) v8::internal::Builtin_ArrayConcat(int, v8::internal::Object**, v8::internal::Isolate*)","(bytecode) ~LdaKeyedProperty","~toString native array.js:248:50","(bytecode) ~CallProperty0","~StackPush native array.js:79:19","toString native array.js:248:50","Join native array.js:119:14","DoJoin native array.js:94:16","~firstPointIsInPolygon ./generate-ring-from-arc.js:3:40","~booleanPointInPolygon ./node_modules/@turf/turf/turf.js:4335:31","~inRing ./node_modules/@turf/turf/turf.js:4383:16","(C++) v8::internal::(anonymous namespace)::CopyObjectToObjectElements(v8::internal::FixedArrayBase*, v8::internal::ElementsKind, unsigned int, v8::internal::FixedArrayBase*, v8::internal::ElementsKind, unsigned int, int)","(bytecode) ~LdaNamedProperty.Wide","(C++) v8::internal::JSReceiver::GetOwnPropertyDescriptor(v8::internal::LookupIterator*, v8::internal::PropertyDescriptor*)","(C++) v8::internal::String::Equals(v8::internal::String*)","(C++) v8::internal::LookupIterator::WriteDataValue(v8::internal::Handle<v8::internal::Object>, bool)","(C++) v8::internal::LookupIterator::PropertyOrElement(v8::internal::Isolate*, v8::internal::Handle<v8::internal::Object>, v8::internal::Handle<v8::internal::Object>, bool*, v8::internal::LookupIterator::Configuration)","(C++) v8::internal::BaseNameDictionary<v8::internal::NameDictionary, v8::internal::NameDictionaryShape>::Add(v8::internal::Handle<v8::internal::NameDictionary>, v8::internal::Handle<v8::internal::Name>, v8::internal::Handle<v8::internal::Object>, v8::internal::PropertyDetails, int*)","(C++) v8::internal::Object::SameValueZero(v8::internal::Object*)","(C++) v8::internal::OrderedHashSet::Add(v8::internal::Handle<v8::internal::OrderedHashSet>, v8::internal::Handle<v8::internal::Object>)","(C++) v8::internal::JsonParser<true>::ParseJsonNumber()","(C++) void std::__unguarded_linear_insert<v8::base::AtomicElement<v8::internal::Smi*>*, v8::internal::EnumIndexComparator<v8::internal::NameDictionary> >(v8::base::AtomicElement<v8::internal::Smi*>*, v8::internal::EnumIndexComparator<v8::internal::NameDictionary>)","(C++) v8::internal::JSReceiver::GetPropertyAttributes(v8::internal::LookupIterator*)","(C++) v8::internal::DoubleToAscii(double, v8::internal::DtoaMode, int, v8::internal::Vector<char>, int*, int*, int*)","(C++) cfree","(C++) v8::internal::KeyAccumulator::AddKey(v8::internal::Object*, v8::internal::AddKeyConversion)","~getGeometry ./index.js:123:30","~lignes.map.l ./index.js:151:32","(C++) v8::internal::MaybeHandle<v8::internal::JSObject> v8::internal::(anonymous namespace)::CreateLiteral<v8::internal::(anonymous namespace)::ObjectBoilerplate>(v8::internal::Isolate*, v8::internal::Handle<v8::internal::JSFunction>, int, v8::internal::Handle<v8::internal::HeapObject>, int)","~getProperties ./index.js:108:32","(builtin) KeyedStoreIC_Megamorphic","(C++) v8::internal::Runtime_CreateDataProperty(int, v8::internal::Object**, v8::internal::Isolate*)","(C++) v8::internal::LookupIterator::State v8::internal::LookupIterator::LookupInRegularHolder<true>(v8::internal::Map*, v8::internal::JSReceiver*) [clone .part.68]","(C++) v8::internal::TransitionsAccessor::SearchTransition(v8::internal::Name*, v8::internal::PropertyKind, v8::internal::PropertyAttributes)","(C++) v8::internal::LookupIterator::ApplyTransitionToDataProperty(v8::internal::Handle<v8::internal::JSObject>)","(C++) v8::internal::Object::OptimalRepresentation()","(builtin) FastArrayPush","(bytecode) ~CallRuntime","(bytecode) ~TestGreaterThan","(C++) v8::internal::FieldIndex::ForDescriptor(v8::internal::Map const*, int)","(C++) v8::internal::JSReceiver::SetOrCopyDataProperties(v8::internal::Isolate*, v8::internal::Handle<v8::internal::JSReceiver>, v8::internal::Handle<v8::internal::Object>, v8::internal::ScopedVector<v8::internal::Handle<v8::internal::Object> > const*, bool)","(C++) v8::internal::JSObject::DefineOwnPropertyIgnoreAttributes(v8::internal::LookupIterator*, v8::internal::Handle<v8::internal::Object>, v8::internal::PropertyAttributes, v8::internal::Object::ShouldThrow, v8::internal::JSObject::AccessorInfoHandling)","(C++) v8::internal::TransitionsAccessor::Initialize()","(bytecode) ~TestEqual.Wide","(C++) v8::internal::(anonymous namespace)::UpdateDescriptorForValue(v8::internal::Handle<v8::internal::Map>, int, v8::internal::PropertyConstness, v8::internal::Handle<v8::internal::Object>)","~fs.writeFileSync fs.js:1294:28","(C++) v8::internal::DependentCode::MarkCodeForDeoptimization(v8::internal::Isolate*, v8::internal::DependentCode::DependencyGroup)","(C++) v8::internal::JsonStringifier::StackPush(v8::internal::Handle<v8::internal::Object>)","(C++) v8::internal::JsonStringifier::Serialize_","(C++) v8::internal::JSObject::FastPropertyAt(v8::internal::Handle<v8::internal::JSObject>, v8::internal::Representation, v8::internal::FieldIndex)","(C++) v8::internal::FastDtoa(double, v8::internal::FastDtoaMode, int, v8::internal::Vector<char>, int*, int*)"];
+levels = [[0,1,0,0,386,10],[0,1,1,0,25,1,0,117,118,0,244,155],[0,1,2,0,25,2,0,117,119,0,2,156,0,242,171],[0,1,3,0,4,11,0,21,36,0,117,120,0,2,157,0,242,118],[0,1,4,0,4,4,0,21,37,0,117,121,0,2,158,0,242,172],[0,1,5,0,4,5,0,21,38,0,117,122,0,2,159,0,231,173,0,1,238,0,9,242,0,1,311],[0,1,6,0,2,12,0,2,23,0,21,39,0,117,123,0,2,160,0,2,49,0,1,67,0,2,73,0,10,74,0,1,112,0,1,138,0,1,140,0,10,174,0,5,177,0,4,184,0,105,186,0,1,199,0,4,233,0,2,238,0,2,239,0,1,240,0,19,241,0,1,245,0,39,247,0,1,265,0,1,266,0,1,267,0,3,278,0,3,292,0,9,295,0,1,302,0,1,309,1,1,313,0,6,314,0,1,315,0,1,316,0,1,112],[0,1,4,0,2,4,0,1,24,0,1,32,0,21,40,0,1,124,0,116,129,0,2,161,5,1,74,0,1,153,0,1,208,0,1,235,0,2,236,0,3,237,0,1,264,0,1,294,2,1,175,0,9,176,0,1,178,0,1,179,0,2,180,0,1,182,0,1,178,0,3,180,0,1,8,0,15,180,0,1,182,0,6,188,0,11,195,0,10,196,0,8,198,0,8,201,0,10,204,0,12,205,0,11,207,0,1,213,0,5,214,0,1,221,0,1,226,0,1,238,0,1,254,0,2,259,1,3,180,0,1,196,5,3,71,0,2,73,0,2,242,0,2,244,0,1,266,0,2,268,0,1,269,0,5,271,0,1,278,0,1,249,0,1,75,0,4,197,0,4,248,0,2,249,0,1,250,0,1,251,0,6,264,0,1,279,0,1,280,0,1,281,0,2,282,0,1,283,0,1,284,0,1,285,0,2,287,0,1,288,0,1,290,0,1,291,0,1,299,0,1,300,0,1,305,0,1,306,0,1,307,0,1,308,0,1,310,1,1,210,4,1,122,0,1,265,0,1,304,0,1,49,0,1,73,0,2,74,0,2,196,0,1,247,0,1,296,0,1,303,12,1,312],[0,1,7,0,2,5,0,1,25,0,1,33,0,21,41,0,1,125,0,2,124,0,114,130,0,2,162,18,1,141,11,2,181,2,3,181,0,1,191,0,15,181,1,1,180,0,1,189,0,3,192,0,1,200,0,2,106,0,1,112,0,6,180,0,1,239,0,1,259,0,1,15,0,2,78,0,2,197,0,1,217,0,1,229,0,1,253,0,1,256,0,1,258,0,2,180,0,2,189,0,1,199,0,1,227,0,1,255,0,1,263,0,1,73,0,1,106,0,1,135,0,1,170,0,1,189,0,3,192,0,1,57,0,3,180,0,1,189,0,3,193,0,1,215,0,1,222,2,10,180,1,7,180,0,3,189,1,1,73,0,2,180,0,1,227,0,1,255,0,1,222,6,3,181,0,1,234,5,1,210,0,1,260,0,1,286,2,1,243,0,1,289,0,1,245,0,1,274,0,1,277,0,2,81,1,5,272,47,1,293,0,1,297,3,1,234,0,1,236,0,1,234,0,1,264,0,1,301],[0,1,8,0,1,13,0,1,16,0,1,26,0,1,34,0,21,42,0,1,126,0,2,125,0,47,131,0,4,145,0,63,147,0,2,163,30,1,15,0,1,183,2,1,153,0,1,181,0,1,185,1,2,15,0,3,153,0,1,181,0,3,187,0,1,203,0,1,208,0,2,219,0,1,225,0,1,232,1,1,181,0,1,190,0,1,73,0,1,193,0,1,222,3,1,261,0,6,181,12,2,181,0,1,9,0,1,190,1,1,180,6,1,206,0,1,63,0,1,193,0,1,215,1,3,181,0,1,189,0,1,194,0,1,216,0,1,231,0,1,215,0,1,223,2,10,181,1,7,181,0,2,190,0,1,209,3,1,181,0,1,228,1,1,223,6,1,202,0,1,208,0,1,252,13,1,246,0,1,275,1,1,82,0,1,270,1,5,273,47,1,49,0,1,298],[0,1,9,0,1,14,0,1,4,0,1,27,0,1,8,0,21,43,0,1,127,0,2,126,0,18,132,0,29,139,0,1,73,0,2,146,0,1,152,61,1,10,0,1,154,0,2,164,54,1,202,2,1,194,0,1,223,4,1,84,0,2,181,0,1,202,0,1,218,0,1,257,12,1,181,0,1,257,3,1,181,8,1,194,0,1,262,1,2,181,0,1,212,5,1,230,2,1,15,0,1,181,0,1,183,0,1,185,0,1,208,0,1,210,0,1,218,0,1,219,0,1,225,0,1,260,1,1,15,0,2,208,0,1,209,0,1,211,0,1,218,0,1,219,6,1,220,2,1,224,23,1,276,1,1,83,0,1,141,1,4,83,0,1,238],[1,1,15,0,1,5,0,1,28,0,1,35,0,21,44,0,1,128,0,2,127,0,1,30,0,1,67,0,1,133,0,2,134,0,2,135,0,1,136,0,1,137,0,1,138,0,1,140,0,1,141,0,2,142,0,1,143,0,1,148,0,1,149,0,1,150,30,1,95,0,1,151,62,1,153,1,2,165,58,1,223,27,1,181,73,1,148,1,1,83,2,4,84],[2,1,17,0,1,29,1,21,37,0,1,128,0,2,153,0,1,144,1,1,73,111,2,162],[2,1,18,0,1,30,1,21,38,117,2,163],[2,1,19,0,1,31,1,21,39,117,2,164],[2,1,20,2,21,40,117,1,166,0,1,169],[2,1,21,2,21,41,117,1,94,0,1,162],[2,1,22,2,17,45,0,4,107,117,1,126,0,1,163],[5,17,43,0,4,43,117,1,167,0,1,164],[5,17,44,0,4,44,117,1,168,0,1,169],[5,17,37,0,4,37,118,1,162],[5,16,38,0,1,47,0,4,38,118,1,163],[5,16,39,0,1,48,0,4,39,118,1,164],[5,16,40,0,1,59,0,4,40,118,1,170],[5,16,41,0,1,60,0,4,41],[5,2,46,0,10,51,0,1,88,0,1,96,0,2,100,0,1,61,0,4,108],[5,1,30,0,1,43,0,10,43,0,1,43,0,1,43,0,2,43,0,1,62,0,4,43],[5,1,50,0,1,44,0,10,44,0,1,44,0,1,44,0,2,44,0,1,105,0,4,44],[6,1,37,0,10,37,0,1,37,0,1,37,0,2,37,0,1,106,0,4,37],[6,1,47,0,9,38,0,1,47,0,1,38,0,1,4,0,2,38,1,4,38],[6,1,48,0,9,39,0,1,48,0,1,39,0,1,5,0,2,39,1,4,39],[6,1,49,0,9,40,0,1,52,0,1,40,0,1,97,0,2,40,1,4,40],[7,9,41,0,1,53,0,1,41,0,1,98,0,2,41,1,4,41],[7,9,55,0,1,54,0,1,89,0,1,99,0,1,101,0,1,103,1,4,109],[7,9,43,1,1,43,1,1,43,0,1,43,1,4,110],[7,9,44,1,1,44,1,1,44,0,1,44,1,4,111],[7,9,37,1,1,37,1,1,37,0,1,37,1,2,112,0,1,114,0,1,115],[7,9,38,1,1,38,1,1,47,0,1,38,1,1,35,0,1,113,1,1,9],[7,9,39,1,1,39,1,1,48,0,1,39,4,1,116],[7,9,40,1,1,90,1,1,59,0,1,40,4,1,117],[7,9,41,1,1,66,1,1,60,0,1,41],[7,8,56,0,1,85,1,1,91,1,1,61,0,1,104],[7,8,43,0,1,43,1,1,92,1,1,62,0,1,43],[7,8,44,0,1,44,1,1,93,1,1,52,0,1,44],[7,8,37,0,1,37,1,1,94,1,1,53,0,1,37],[7,6,38,0,1,47,0,1,57,0,1,38,1,1,95,1,1,102,0,1,47],[7,6,39,0,1,48,1,1,39,4,1,48],[7,6,40,0,1,79,1,1,40,4,1,69],[7,6,41,0,1,80,1,1,41,4,1,70],[7,5,58,0,1,76,0,1,81,1,1,86,4,1,52],[7,5,43,0,1,43,0,1,82,1,1,43,4,1,87],[7,5,44,0,1,44,0,1,83,1,1,44,4,1,102],[7,5,37,0,1,37,0,1,84,1,1,37],[7,4,38,0,1,47,0,1,38,2,1,47],[7,4,39,0,1,48,0,1,39,2,1,48],[7,4,40,0,1,59,0,1,40,2,1,69],[7,4,41,0,1,60,0,1,41,2,1,70],[7,4,64,0,1,61,0,1,77,2,1,52],[7,4,43,0,1,62,0,1,43,2,1,87],[7,4,44,0,1,63,0,1,44,2,1,54],[7,4,37,1,1,37],[7,4,38,1,1,47],[7,4,39,1,1,48],[7,4,40,1,1,69],[7,4,41,1,1,70],[7,4,65,1,1,71],[7,4,43,1,1,78],[7,4,44],[7,4,37],[7,3,38,0,1,47],[7,3,39,0,1,48],[7,3,40,0,1,61],[7,2,41,0,1,66,0,1,62],[7,2,68,0,1,67,0,1,74],[7,2,43,1,1,75],[7,2,44],[7,2,37],[7,2,47],[7,2,48],[7,2,69],[7,1,60,0,1,70],[7,1,61,0,1,71],[7,1,62,0,1,72],[7,1,52],[7,1,53],[7,1,73]];
+numTicks = 387;
+
+let rangeMin = 0;
+let rangeMax = 1;
+let topLevel = 0;
+let query = '';
+let graphWidth, pxPerTick;
+
+const pxPerLevel = 18;
+const collapseThreshold = 5;
+const hideThreshold = 0.5;
+const labelThreshold = 20;
+
+highlightEl.style.height = pxPerLevel + 'px';
+
+if (levels) {
+    init();
+}
+
+function init() {
+    document.body.classList.add('loaded');
+
+    // delta-decode bar positions
+    for (const level of levels) {
+        let prev = 0;
+        for (let i = 0; i < level.length; i += 3) {
+            level[i] += prev;
+            prev = level[i] + level[i + 1];
+        }
+    }
+
+    updateFromHash();
+    render();
+}
+
+window.onhashchange = () => {
+    updateFromHash();
+    render();
+};
+canvas.onclick = (e) => {
+    const {i, j} = xyToBar(e.offsetX, e.offsetY);
+    if (j === -1) return;
+    window.location.hash = [i, j].join(',');
+    removeHover();
+};
+document.getElementById('reset').onclick = () => {
+    searchEl.value = query = '';
+    window.location.hash = '';
+    render();
+};
+window.onresize = render;
+
+searchEl.oninput = (e) => {
+    query = e.target.value;
+    render();
+};
+
+function updateFromHash() {
+    const [i, j] = window.location.hash.substr(1).split(',').map(Number);
+
+    if (!isNaN(i) && !isNaN(j)) {
+        topLevel = i;
+        rangeMin = levels[i][j] / numTicks;
+        rangeMax = (levels[i][j] + levels[i][j + 1]) / numTicks;
+    } else {
+        topLevel = 0;
+        rangeMin = 0;
+        rangeMax = 1;
+    }
+}
+
+function tickToX(i) {
+    return (i - numTicks * rangeMin) * pxPerTick;
+}
+
+function render() {
+    if (!levels) return;
+
+    graphWidth = canvas.width = canvas.clientWidth;
+    canvas.height = pxPerLevel * (levels.length - topLevel);
+    canvas.style.height = canvas.height + 'px';
+
+    if (devicePixelRatio > 1) {
+        canvas.width *= 2;
+        canvas.height *= 2;
+        ctx.scale(2, 2);
+    }
+
+    pxPerTick = graphWidth / numTicks / (rangeMax - rangeMin);
+
+    ctx.textBaseline = 'middle';
+    ctx.font = '10px Tahoma, sans-serif';
+    ctx.strokeStyle = 'white';
+
+    for (let i = 0; i < levels.length - topLevel; i++) {
+        const level = levels[topLevel + i];
+
+        for (let j = 0; j < level.length; j += 3) {
+            const barIndex = level[j];
+            const x = tickToX(barIndex);
+            const y = i * pxPerLevel;
+            let numBarTicks = level[j + 1];
+
+            const inQuery = query && (names[level[j + 2]].indexOf(query) >= 0) || false;
+
+            // merge very small blocks into big "collapsed" ones for performance
+            const collapsed = numBarTicks * pxPerTick <= collapseThreshold;
+            if (collapsed) {
+                while (
+                    j < level.length - 3 &&
+                    barIndex + numBarTicks === level[j + 3] &&
+                    level[j + 4] * pxPerTick <= collapseThreshold &&
+                    (inQuery === (query && (names[level[j + 5]].indexOf(query) >= 0) || false))
+                ) {
+                    j += 3;
+                    numBarTicks += level[j + 1];
+                }
+            }
+
+            const sw = numBarTicks * pxPerTick - (collapsed ? 0 : 0.5);
+            const sh = pxPerLevel - 0.5;
+
+            if (x < -1 || x + sw > graphWidth + 1 || sw < hideThreshold) continue;
+
+            ctx.beginPath();
+            ctx.rect(x, y, sw, sh);
+
+            const ratio = numBarTicks / numTicks;
+
+            if (!collapsed) {
+                ctx.stroke();
+                const intensity = Math.min(1, ratio * Math.pow(1.16, i) / (rangeMax - rangeMin));
+                const h = 50 - 50 * intensity;
+                const l = 65 + 7 * intensity;
+                ctx.fillStyle = inQuery ? 'lightgreen' : `hsl(${h}, 100%, ${l}%)`;
+            } else {
+                ctx.fillStyle = inQuery ? 'lightgreen' : '#eee';
+            }
+            ctx.fill();
+
+            if (!collapsed && sw >= labelThreshold) {
+
+                const percent = Math.round(10000 * ratio) / 100;
+                const name = `${names[level[j + 2]]} (${percent}%, ${numBarTicks} samples)`;
+
+                ctx.save();
+                ctx.clip();
+                ctx.fillStyle = 'black';
+                ctx.fillText(name, Math.max(x, 0) + 1, y + sh / 2);
+                ctx.restore();
+            }
+        }
+    }
+}
+
+// pixel coordinates to bar coordinates in the levels array
+function xyToBar(x, y) {
+    const i = Math.floor(y / pxPerLevel) + topLevel;
+    const j = binarySearchLevel(x, levels[i]);
+    return {i, j};
+}
+
+// binary search of a block in a stack level
+function binarySearchLevel(x, level) {
+    let i = 0;
+    let j = level.length - 3;
+    while (i <= j) {
+        const m = 3 * ((i / 3 + j / 3) >> 1);
+        const x0 = tickToX(level[m]);
+        const x1 = tickToX(level[m] + level[m + 1]);
+        if (x0 <= x && x1 >= x) {
+            return x1 - x0 > collapseThreshold ? m : -1;
+        }
+        if (x0 > x) {
+            j = m - 3;
+        } else {
+            i = m + 3;
+        }
+    }
+    return -1;
+}
+
+if (window.orientation === undefined) {
+    canvas.onmousemove = addHover;
+    canvas.onmouseout = window.onscroll = removeHover;
+}
+
+function removeHover() {
+    canvas.style.cursor = '';
+    highlightEl.style.display = 'none';
+    tooltipEl.style.display = 'none';
+}
+
+function addHover(e) {
+    const {i, j} = xyToBar(e.offsetX, e.offsetY);
+
+    if (j === -1 || e.offsetX < 0 || e.offsetX > graphWidth) {
+        removeHover();
+        return;
+    }
+
+    canvas.style.cursor = 'pointer';
+
+    const level = levels[i];
+    const x = tickToX(level[j]);
+    const y = (i - topLevel) * pxPerLevel;
+    const sw = tickToX(level[j] + level[j + 1]) - x;
+
+    highlightEl.style.display = 'block';
+    highlightEl.style.left = x + 'px';
+    highlightEl.style.top = (canvas.offsetTop + y) + 'px';
+    highlightEl.style.width = sw + 'px';
+
+    const numBarTicks = level[j + 1];
+    const percent = Math.round(10000 * numBarTicks / numTicks) / 100;
+    const time = `<span class="time">(${percent}%, ${numBarTicks} samples)</span>`;
+    let content = names[level[j + 2]];
+    if (content[0] !== '(') content = content.replace(' ', ` ${time}<br><span class="path">`) + '</span>';
+    else content += ` ${time}`;
+
+    tooltipEl.innerHTML = content;
+    tooltipEl.style.display = 'block';
+    tooltipEl.style.left = (Math.min(e.offsetX + 15 + tooltipEl.clientWidth, graphWidth) - tooltipEl.clientWidth) + 'px';
+    tooltipEl.style.top = (canvas.offsetTop + e.offsetY + 12) + 'px';
+}
+
+// (function frame() { if (levels) render(); requestAnimationFrame(frame); })();
+
+
+</script>
+</body>
+</html>

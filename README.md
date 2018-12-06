@@ -29,7 +29,5 @@ decompress('MonFichierEdigeo-cc-38001000AS01.tar.bz2').then(files => {
         }
     }
 
-   const result = edigeoTogeojson(bufferData,'38', {filter: true, geomHash: false})
+   const data = edigeoTogeojson(bufferData);
 ```
-
-Bientôt plus de documentations, d'optimisations, de tests et de benchmarks ...

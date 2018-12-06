@@ -1,5 +1,79 @@
-// const turf = require('@turf/turf');
-// const fs = require('fs');
+const turf = require('@turf/turf');
+
+const firstPointIsInPolygon = function (poly1, poly2) {
+    try {
+        const point = turf.point(poly1[0]);
+        const polygon = turf.polygon([poly2])
+        return turf.inside(point, polygon);     
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+
+}
+
+const generateGeometry = function( _rings){
+           
+        // TODO : Il faudrait modifier tout ça ... Il faut juste trouver le ring exterieur, les multi polygones c'est ailleurs
+        // on cherche quels polygones contient d'autre (multiPolygon, polygon a trou, etc...)
+        const rings = [];
+        // TODO regarder la ligne d'en dessous, il me semble que c'est un polygon uniquement
+        if (_rings.length > 1) { // => trou ou/et multi polygon  -(un polygon a trou seulement?)
+            // console.log(JSON.stringify(_rings));
+            const indexFinded = [];
+            for (let i = 0; i < _rings.length; i++) {
+               
+                for (let j = 0; j < _rings.length; j++) {
+                    if (i !== j) {
+                       
+                        if (firstPointIsInPolygon(_rings[i], _rings[j])) { // le polygon I est contenu par un autre
+                            if (indexFinded.indexOf(i) == -1) {
+                                if (!rings[j.toString()]) rings[j.toString()] = [];
+                                rings[j.toString()].push(i);
+                                indexFinded.push(i)
+                            }
+                            break
+                        }
+                        else if (firstPointIsInPolygon(_rings[j], _rings[i])) { // le polygon I contient un autre
+                            if (indexFinded.indexOf(j) == -1) {
+                                if (!rings[i.toString()]) rings[i.toString()] = [];
+                                rings[i.toString()].push(j);
+                                indexFinded.push(j)
+                            }
+                            break
+                        }
+                    }
+                }
+                if (indexFinded.indexOf(i) == -1 && !rings[i]) { // WTF?  le polygon n'appartient à personne et ne contient personne
+                    rings[i.toString()] = [];
+
+                }
+            }
+        } else { // => il est tout seul
+            rings['0'] = [];
+        }
+
+        // on genere les polygones complexes (ou pas);
+        let polygon = [];
+        let t = 0;
+        for (let i in rings) {
+            polygon[t] = [];
+            polygon[t].push(_rings[i]); // outerRing
+            if (rings[i].length > 0) { //y'a des trous! => innerRing
+                for (let j = 0; j < rings[i].length; j++) {
+                    polygon[t].push(_rings[rings[i][j]]);
+                }
+            }
+            t++;
+        }
+
+        if (_rings.length > 0) { //=> y'a bien au moins un polygone != Face_0 par exemple
+            return { "type": "Polygon", "coordinates": polygon[0] };
+        } else {
+            return [];
+        }
+    
+}
 
 const countNbRes = function (arr, searchTerm) {
     let nbRes = 0;
@@ -34,21 +108,28 @@ const getArcsCulDeSac = function (arcs, id_face) {
             if (summary.indexOf(0) != -1){
                 culDeSac.push(i);
             }
-        }
-    
-            // culDeSac.push(i);
-            // console.log('CUL DE SAC' , i);
-        
+        }      
 
     }
     return culDeSac;
 
 }
 
-const generateRingFromArcs = function (_arcs, id_face = null, clean=false) {
+const generateRingFromPFE = function (pfe, id_face = null, clean=false) {
+    // if (id_face == 'Face_428'){
+    //     console.log(pfe)
+    //     console.log(pfe['PAR'].map(p => p['SCP']))
+    // }
+    const _arcs = pfe['PAR'].map(p => p['COR'])
+    // const cL = pfe['PAR'].map(p => p['childsLNK'])
+    // if (cL.length > 5){
+    //     console.log(cL)
+    //     console.log('(------------)')
+    // }
+    // console.log(pfe)
     let arcs = JSON.parse(JSON.stringify(_arcs)); // Object.assign({}, _arcs); // _arcs.slice();
     if (id_face == 'Face_0') {
-        return [];
+        generateGeometry([]);
     }
     if (clean){
         console.log('CLEAN = TRUE');
@@ -64,17 +145,7 @@ const generateRingFromArcs = function (_arcs, id_face = null, clean=false) {
         }
     }
 
-    // DEBUG
-    // if (id_face == 'Face_214612') {
-    //     let r = [];
-    //     console.log(arcs);
-    //     for (let i = 0; i < arcs.length; i++) {
-    //         let first = arcs[i][0].toString()
-    //         let last = arcs[i][arcs[i].length - 1].toString();
-    //         r.push(turf.lineString(arcs[i], { id: i, first: first, last: last }))
-    //     }
-    //     fs.writeFileSync('./fixture/debug_arc_' + (clean ? 'cleaned' : '') +'_'+ id_face + '.geojson', JSON.stringify(turf.featureCollection(r)));
-    // }
+
 
     let rings = [];
     let ring = null
@@ -91,7 +162,7 @@ const generateRingFromArcs = function (_arcs, id_face = null, clean=false) {
     }
 
     if (arcs.length == 0) {
-        return rings;
+        return generateGeometry(rings);
     }
 
     ring = arcs[arcs.length - 1];
@@ -144,7 +215,6 @@ const generateRingFromArcs = function (_arcs, id_face = null, clean=false) {
 
         }
         else if (ringFirstPoint.toString() == firstCoord.toString()) {
-            // console.log('Cas 4')
             // il faut renverser les coords, et le placer en 1ere Poistion
             let reversed = currentCoords.reverse();
             reversed.pop();
@@ -165,7 +235,7 @@ const generateRingFromArcs = function (_arcs, id_face = null, clean=false) {
 
 
             if (arcs.length == 0) {
-                return rings;
+                return  generateGeometry(rings);
             } else {
                 ring = arcs[arcs.length - 1];
                 arcs.splice(arcs.length - 1, 1)
@@ -178,16 +248,23 @@ const generateRingFromArcs = function (_arcs, id_face = null, clean=false) {
     }
     if (rings.length == 0 && !clean){
         console.log('oh oh, le ring est vide, on tente de le néttoyer ...')
-        return generateRingFromArcs(_arcs, id_face, true)
+       
+        return generateRingFromPFE(pfe, id_face, true)
     } else if (clean){
-        console.log('RESUSLT ', rings);
-        return rings;
+        if (rings.length == 0){
+            return null;
+        }
+        return generateGeometry(rings);
     }
     else {
+        if (rings.length == 0){
+            return null;
+        }
+        return generateGeometry(rings);
         
-        return rings;
+        // return generateGeometry(rings);
     }
     
 }
 
-module.exports = generateRingFromArcs;
+module.exports = generateRingFromPFE;

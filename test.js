@@ -2,7 +2,7 @@ const decompress = require('decompress');
 const edigeoTogeojson = require('./index.js');
 const fs = require('fs');
 
-decompress('./fixture/edigeo-cc-38053000CN01.tar.bz2').then(files => {
+decompress('/home/fabien/Téléchargements/dep84/84036/edigeo-cc-84036000AO01.tar.bz2').then(files => {
 
     const bufferData = { 'THF': undefined, 'QAL': undefined, 'GEO': undefined, 'SCD':undefined, 'VEC': [] }
     for (let i = 0; i < files.length; i++) {

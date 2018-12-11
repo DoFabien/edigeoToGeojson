@@ -3,7 +3,7 @@ const parseVEC = require('./parseVEC');
 const generateRingFromPFE = require('./generate-ring-from-arc');
 const turf = require('@turf/turf')
 
-
+let errors = [];
 /*Récupère la projection en entrée*/
 const getProjection = function (GEO_file) {
     if (!GEO_file) return null;
@@ -120,57 +120,21 @@ const getProperties = function (fea, qualite = null) {
     return properties;
 };
 
-const getGeometry = function (fea, parsedVec) {
-    const childs = fea['childsLNK'];
 
-    if (childs.filter(c => c['RTY'] == 'PFE').length > 0) {
-        let polygons = childs.filter(c => c['RTY'] == 'PFE');
-        // console.log(polygons);
-        let geoms = polygons.map(l => parsedVec['PFE'][l['RID']].geometry);
-        if (geoms.length == 1) {
-            if (!geoms[0] || !geoms[0].type) {
-                console.error('Pas de geometrie!')
-                return null
-            }
-            return geoms[0]
-        } else {
-            let multiPoly = { "type": "Feature", "properties": {}, "geometry": geoms[0] };
-            for (let q = 1; q < geoms.length; q++) {
-                multiPoly = turf.union(multiPoly, { "type": "Feature", "properties": {}, "geometry": geoms[q] });
-            }
-            return multiPoly.geometry
-        }
-    } else if (childs.filter(c => c['RTY'] == 'PNO').length > 0) {
-        let points = childs.filter(c => c['RTY'] == 'PNO')
-        let geoms = points.map(l => parsedVec['PNO'][l['RID']].geometry);
-        // let point = parsedVec['PNO'][points[0]['RID']];
-        return geoms[0]
-
-    } else if (childs.filter(c => c['RTY'] == 'PAR').length > 0) {
-        let lignes = childs.filter(c => c['RTY'] == 'PAR')
-        let geoms = lignes.map(l => parsedVec['PAR'][l['RID']].geometry);
-        if (geoms.length == 1) {
-            return geoms[0]
-        } else {
-            return geoms
-        }
-    }
-}
-
-const parseSDC = function (sdcString) {
-    const parsedSdc = {};
-    const blocks = (sdcString.split('RTYSA03:'));
+const parseSCD = function (scdString) {
+    const parsedScd = {};
+    const blocks = (scdString.split('RTYSA03:'));
     blocks.shift()
     for (block of blocks) {
 
         const rows = block.split(String.fromCharCode(13, 10));
         const type = rows[0];
         const id = rows[1].split(':')[1]
-        if (!parsedSdc[type]) {
-            parsedSdc[type] = {};
+        if (!parsedScd[type]) {
+            parsedScd[type] = {};
         }
         // console.log(id);
-        parsedSdc[type][id] = {};
+        parsedScd[type][id] = {};
         // const elements = {'type': rows[0] };
         for (let i = 2; i < rows.length; i++) {
             const row = rows[i]
@@ -178,11 +142,11 @@ const parseSDC = function (sdcString) {
                 continue;
             }
             const rs = row.split(':');
-            parsedSdc[type][id][rs[0]] = rs[1];
+            parsedScd[type][id][rs[0]] = rs[1];
         }
     }
-    // console.log(parsedSdc);
-    return parsedSdc;
+    // console.log(parsedScd);
+    return parsedScd;
 }
 
 
@@ -191,10 +155,11 @@ const toGeojson = function (bufferData) {
     const THFstrUtf8 = bufferData.THF.toString(); // => en UTF8 mais c'est pas grave
     const encoding = getEncoding(THFstrUtf8); // permet de recupérer l'encodage
     // console.log(encoding);
-
+   
     // const THFstr = iconv.decode(bufferData.THF, encoding); // convertit en utf8
     const QALstr = iconv.decode(bufferData.QAL, encoding);
     const GEOstr = iconv.decode(bufferData.GEO, encoding);
+    // const SCDstr = iconv.decode(bufferData.SCD, encoding);
     const proj = getProjection(GEOstr);
     const crs = {
         "type": "EPSG",
@@ -203,7 +168,10 @@ const toGeojson = function (bufferData) {
         }
     }
     const year = getAnnee(THFstrUtf8);
+    // console.log(year)
     const actu = getActualite(QALstr);
+    // const parsedSCD = parseSCD(SCDstr);
+    // console.log(parsedSCD);
 
     const VECstrs = [];
 
@@ -214,85 +182,101 @@ const toGeojson = function (bufferData) {
     let result = { 'PNO': {}, 'PAR': {}, 'PFE': {}, 'FEA': {}, 'LNK': {} };
     for (let vec of VECstrs) {
         //ici on a tout ce qu'il faut pour generer les geometrie
-        parsedVec = parseVEC(vec);
+        const parsedVec = parseVEC(vec);
+        // TODO utiliser SCP ici
+        // for (let id in parsedVec['LNK']) { // on ne l'utilise pas...
+        //     let currentLNK = parsedVec['LNK'][id];
+        //     let SCP = currentLNK['SCP'];
+        //     if (SCP.RTY == 'REL') {
+        //         if (['ID_S_RCO_NOD_FIN', 'ID_S_RCO_NOD_INI'].indexOf(SCP.RID) !== -1) {
+        //             let arc = parsedVec.PAR[currentLNK.FTP[0].RID]
+        //             let noeud = parsedVec.PNO[currentLNK.FTP[1].RID]
+        //             if (!arc.nodes) { arc['nodes'] = [] };
+        //             arc.nodes.push(noeud)
+        //         }
+        //     }
+        // }
+
+        // relation entre les PAR et les FEA
         for (let id in parsedVec['LNK']) {
             let currentLNK = parsedVec['LNK'][id];
-            let parentLNK = currentLNK['FTP'][0];
-            let childsLNK = [];
-            for (let i = 1; i < currentLNK['FTP'].length; i++) {
-                let child = currentLNK['FTP'][i];
-                
-                if (!parsedVec[child['RTY']][child['RID']]) {
-                    // console.log(parsedVec[child['RTY']]);
-                    // console.log(parsedVec[child['RTY']])
-                    continue;
-                }
-                if (!parsedVec[child['RTY']][child['RID']]['parents']) parsedVec[child['RTY']][child['RID']]['parents'] = [];
-
-                const nbDup = parsedVec[child['RTY']][child['RID']]['parents']
-                    .filter(g => g.RID == parentLNK.RID).length
-                if (nbDup == 0) { // pas deja present
-                    parsedVec[child['RTY']][child['RID']]['parents'].push(parentLNK)
-                }
-
-                const nbDupChild = childsLNK
-                    .filter(g => g.RID == child.RID).length
-                if (nbDupChild === 0) {
-                    childsLNK.push(child)
-                }
-            }
-
-            let parent = parsedVec[parentLNK['RTY']][parentLNK['RID']];
-            if (!parent['childsLNK']) parent['childsLNK'] = [];
-            parent['childsLNK'] = parent['childsLNK'].concat(childsLNK);
-            // uniqby
-        };
-
-
-        // ARC DANS PFE
-        for (let id in parsedVec['PFE']) {
-            let pfe = parsedVec['PFE'][id]
-            pfe['PAR'] = [];
-            if (!pfe) continue;
-            
-            if (!pfe['parents']){
-                continue
-            }
-            for (let parent of pfe['parents']) {
-                if (parent['RTY'] === 'PAR') {
-                    pfe['PAR'].push(parsedVec['PAR'][parent['RID']])
+            let SCP = currentLNK['SCP'];
+            if (SCP.RTY == 'REL') {
+                if (['ID_S_RCO_FAC_GCHE', 'ID_S_RCO_FAC_DRTE'].indexOf(SCP.RID) !== -1) {
+                    let arc = parsedVec.PAR[currentLNK.FTP[0].RID]
+                    let face = parsedVec.PFE[currentLNK.FTP[1].RID]
+                    if (!face.arcs) { face['arcs'] = [] };
+                    face.arcs.push(arc)
                 }
             }
         }
 
-        // Generation de la face
-        for (let id in parsedVec['PFE']) {
-            let pfe = parsedVec['PFE'][id];
-            pfe['geometry'] = generateRingFromPFE(pfe, id);
-        }
-        // Generation de la face
-        for (let id in parsedVec['PNO']) {
-            let pno = parsedVec['PNO'][id];
-            const coords = pno.COR
-            pno['geometry'] = { type: 'Point', coordinates: coords[0] }
-        }
-        for (let id in parsedVec['PAR']) {
-            let par = parsedVec['PAR'][id];
-            const coords = par.COR 
-            par['geometry'] = { "type": "LineString", "coordinates": coords[0] } 
-        }
+        for (let id in parsedVec['LNK']) {
+            let currentLNK = parsedVec['LNK'][id];
+            let SCP = currentLNK['SCP'];
+            if (SCP.RTY == 'REL') {
 
-        // result['FEA'] = { ...result['FEA'], ...parsedVec['FEA'] }
-        // result['LNK'] = { ...result['LNK'], ...parsedVec['LNK'] }
-        // result['PFE'] = { ...result['PFE'], ...parsedVec['PFE'] }
-        // result['PAR'] = { ...result['PAR'], ...parsedVec['PAR'] }
-        // result['PNO'] = { ...result['PNO'], ...parsedVec['PNO'] }
-        for (let type in parsedVec){ // un peu plus rapide...
-            for(let id in parsedVec[type]){
-                result[type][id] = parsedVec[type][id];
+                if (currentLNK.FTP[0].RTY == 'FEA') {
+                    let fea = parsedVec.FEA[currentLNK.FTP[0].RID]
+
+                    // console.log(fea)
+                    // console.log(currentLNK.FTP);
+                    let pfeLnk = currentLNK.FTP.filter(p => p.RTY === 'PFE');
+                    let parLnk = currentLNK.FTP.filter(p => p.RTY === 'PAR');
+                    let pnoLnk = currentLNK.FTP.filter(p => p.RTY === 'PNO');
+                    if (pfeLnk.length > 0) {
+                        let geoms = pfeLnk.map(pf => generateRingFromPFE(parsedVec.PFE[pf.RID], pf.RID));
+                        if (geoms.length == 1) {
+                            fea['geometry'] = geoms[0]
+                        } else if (geoms.length > 1) {
+                            let multiPoly = { "type": "Feature", "properties": {}, "geometry": geoms[0] };
+                            for (let q = 1; q < geoms.length; q++) {
+                                multiPoly = turf.union(multiPoly, { "type": "Feature", "properties": {}, "geometry": geoms[q] });
+                            }
+                            fea['geometry'] = multiPoly.geometry
+                        } else {
+                            console.log('PAS DE PFE DANS LE FEA')
+                        }
+                    } else if (parLnk.length > 0) {
+                        let geomsCoords = parLnk.map(p => parsedVec.PAR[p.RID].COR);
+                        if (geomsCoords.length == 1) {
+                            fea['geometry'] = {  'type': 'LineString', "coordinates" : geomsCoords[0]}
+                        } else if( geomsCoords.length > 1){
+                            fea['geometry'] = {  'type': 'MultiLineString', "coordinates" : geomsCoords}
+                        }
+                        // { "type": "LineString", "coordinates": coords[0] }
+
+                    }
+                    else if (pnoLnk.length > 0) {
+                        let geomsCoords = pnoLnk.map(p =>  parsedVec.PNO[p.RID].COR);
+                        if (geomsCoords.length == 1) {
+                            fea['geometry'] = {  'type': 'Point', "coordinates": geomsCoords[0][0] }
+                        } else if( geomsCoords.length > 1){
+                            fea['geometry'] = {  'type': 'MultiPoint', "coordinates" : geomsCoords[0]}
+                        }
+                    } else {
+                        errors.push({'error': 'La FEA ne possède pas de PNO, PAR ou PFE', 'fea': fea });
+                    }
+
+
+                    if( !fea.geometry){
+                        errors.push({'error': 'PAS DE geometrie dans la FEA', 'fea': fea });
+                    }
+                    if( Array.isArray(fea.geometry)){
+                        errors.push({'error': 'la geometrie de la FEA est un array vide', 'fea': fea });
+                    }
+
+                }
             }
         }
-  
+
+        for (let id in parsedVec['FEA']) {
+            result['FEA'][id] = parsedVec['FEA'][id];
+        }
+        for (let id in parsedVec['LNK']) {
+            result['LNK'][id] = parsedVec['LNK'][id];
+        }
+
     };
 
     let geojsons = {}
@@ -316,7 +300,7 @@ const toGeojson = function (bufferData) {
         const feature = {
             "type": "Feature",
             "properties": { _id: id, ...getProperties(fea, actu) },
-            "geometry":  getGeometry(fea, result)
+            "geometry": fea.geometry
         }
         geojsons[tableId].features.push(feature);
     }
@@ -341,7 +325,7 @@ const toGeojson = function (bufferData) {
         }
     }
 
-    return { 'geojsons': geojsons, 'relations': rels };
+    return { 'geojsons': geojsons, 'relations': rels, 'errors':errors };
 }
 
 module.exports = toGeojson;

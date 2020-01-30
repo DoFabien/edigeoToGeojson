@@ -1,6 +1,6 @@
 {
   "name": "edigeo-to-geojson",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Convertit les fichiers du cadatre français de l'EDIGEO en GEOJSON",
   "main": "index.js",
   "dependencies": {

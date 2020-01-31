@@ -1,5 +1,5 @@
 # edigeoToGeojson
-Convertit les fichiers du cadatre français de l'EDIGEO en GEOJSON
+Convertit les fichiers du cadastre français de l'EDIGEO en GEOJSON
 
 # Installation
 

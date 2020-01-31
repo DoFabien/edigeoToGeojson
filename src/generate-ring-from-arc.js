@@ -1,10 +1,11 @@
-const turf = require('@turf/turf');
+import {point, polygon, lineString, featureCollection,inside, explode, convex } from '@turf/turf';
+
 
 const firstPointIsInPolygon = function (poly1, poly2) {
     try {
-        const point = turf.point(poly1[0]);
-        const polygon = turf.polygon([poly2])
-        return turf.inside(point, polygon);
+        const _point = point(poly1[0]);
+        const _polygon = polygon([poly2])
+        return inside(_point, _polygon);
     } catch (error) {
         console.log(error);
         return false;
@@ -114,7 +115,7 @@ const getArcsCulDeSac = function (arcs, id_face) {
 }
 const generateRingFromPFE = function (pfe, id_face = null, clean = 0) {
     const _arcs = pfe.arcs.map(arc => arc.COR)
-    let arcs = JSON.parse(JSON.stringify(_arcs)); // Object.assign({}, _arcs); // _arcs.slice();
+    let arcs = JSON.parse(JSON.stringify(_arcs)); // Object.assign({}, _arcs); // _arcs.slice(); // [...arcs]
     if (clean == 1) {
         // get les arcs qui sont en cul de sac
         let culDeSac = getArcsCulDeSac(arcs, id_face);
@@ -131,12 +132,12 @@ const generateRingFromPFE = function (pfe, id_face = null, clean = 0) {
     // Methode de brute => tous les points, convex hull
     else if (clean == 2) {
         const linstrings = _arcs.map(a => {
-            return turf.lineString(a);
+            return lineString(a);
         })
-        const fc = turf.featureCollection(linstrings);
-        const explode = turf.explode(fc);
+        const fc = featureCollection(linstrings);
+        const _explode = explode(fc);
         try {
-            const hull = turf.convex(explode);
+            const hull = convex(_explode);
             if (hull){
                 return hull.geometry;
             } else {
@@ -266,4 +267,4 @@ const generateRingFromPFE = function (pfe, id_face = null, clean = 0) {
 
 }
 
-module.exports = generateRingFromPFE;
+export default generateRingFromPFE

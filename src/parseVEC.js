@@ -9,9 +9,9 @@ const parseFtpScpNCo = function (FTPstr) {
 // ensemble de fonction decomposant les type de VEC (on lui passe un block)
 let parseVecElems = {
     'PNO': (rows) => {
-        const id = rows[1].split(':')[1]
         const PNO = { 'COR': [] };
-        for (row of rows) {
+        for (let ri = 0; ri < rows.length; ri++){
+            const row = rows[ri];
             if (row == '') continue;
             const rs = row.split(':')
             const zone = rs[0].substr(0, 3)
@@ -40,9 +40,9 @@ let parseVecElems = {
         return PNO;
     },
     'PAR': (rows) => {
-        const id = rows[1].split(':')[1]
         const PAR = { 'COR': [] };
-        for (row of rows) {
+        for (let ri = 0; ri < rows.length; ri++){
+            const row = rows[ri];
             if (row == '') continue;
             const rs = row.split(':')
             const zone = rs[0].substr(0, 3)
@@ -63,7 +63,8 @@ let parseVecElems = {
                     PAR['QAC'] = rs[1];
                     break
                 case 'COR':
-                    PAR['COR'].push(corToJsonCoords(rs[1]))
+                    const coordinates = corToJsonCoords(rs[1]);
+                    PAR['COR'].push(coordinates)
                     break
                 default:
                     break;
@@ -73,9 +74,9 @@ let parseVecElems = {
         return PAR;
     },
     'PFE': (rows) => {
-        const id = rows[1].split(':')[1]
         const PFE = {};
-        for (row of rows) {
+        for (let ri = 0; ri < rows.length; ri++){
+            const row = rows[ri];
             if (row == '') continue;
             const rs = row.split(':')
             const zone = rs[0].substr(0, 3)
@@ -103,9 +104,9 @@ let parseVecElems = {
         return PFE;
     },
     'FEA': (rows) => {
-        const id = rows[1].split(':')[1]
         const FEA = { 'ATP': [], 'ATV': [] };
-        for (row of rows) {
+        for (let ri = 0; ri < rows.length; ri++){
+            const row = rows[ri];
             if (row == '') continue;
             const rs = row.split(':')
             const zone = rs[0].substr(0, 3)
@@ -181,11 +182,12 @@ let parseVecElems = {
     }
 }
 
-const parseVEC = function (vecString) {
+export default function  (vecString) {
     const parsedVec = {'PNO':{}, 'PAR':{}, 'PFE':{}, 'FEA':{}, 'LNK':{}};
     const blocks = (vecString.split('RTYSA03:'));
     blocks.shift()
-    for (block of blocks) {
+    for (let bi = 0; bi < blocks.length; bi++) {
+        const block = blocks[bi];
         const rows = block.split(String.fromCharCode(13, 10));
         const type = rows[0];
         const id = rows[1].split(':')[1]
@@ -205,10 +207,10 @@ const parseVEC = function (vecString) {
             parsedVec['LNK'][id] = parseVecElems.LNK(rows)
         }
     }
-    // console.log(parsedVec);
+    // console.log(parsedVec.PAR.Arc_411031);
     return parsedVec;
 }
 
 
 
-module.exports = parseVEC;
+// module.exports = parseVEC;

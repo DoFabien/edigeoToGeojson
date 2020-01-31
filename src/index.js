@@ -1,9 +1,13 @@
-const iconv = require('iconv-lite');
-const parseVEC = require('./parseVEC');
-const generateRingFromPFE = require('./generate-ring-from-arc');
-const turf = require('@turf/turf')
+// const iconv = require('iconv-lite');
+// const parseVEC = require('./parseVEC');
+// const generateRingFromPFE = require('./generate-ring-from-arc');
+// const turf = require('@turf/turf')
 
-let errors = [];
+import iconv from 'iconv-lite';
+import parseVEC from './parseVEC';
+import generateRingFromPFE from './generate-ring-from-arc';
+import {union} from '@turf/turf';
+
 /*Récupère la projection en entrée*/
 const getProjection = function (GEO_file) {
     if (!GEO_file) return null;
@@ -125,7 +129,8 @@ const parseSCD = function (scdString) {
     const parsedScd = {};
     const blocks = (scdString.split('RTYSA03:'));
     blocks.shift()
-    for (block of blocks) {
+    for (let bi = 0; bi < blocks.length; bi++) {
+        const block = blocks[bi];
 
         const rows = block.split(String.fromCharCode(13, 10));
         const type = rows[0];
@@ -152,6 +157,7 @@ const parseSCD = function (scdString) {
 
 
 const toGeojson = function (bufferData) {
+    let errors = [];
     const THFstrUtf8 = bufferData.THF.toString(); // => en UTF8 mais c'est pas grave
     const encoding = getEncoding(THFstrUtf8); // permet de recupérer l'encodage
     // console.log(encoding);
@@ -231,7 +237,7 @@ const toGeojson = function (bufferData) {
                         } else if (geoms.length > 1) {
                             let multiPoly = { "type": "Feature", "properties": {}, "geometry": geoms[0] };
                             for (let q = 1; q < geoms.length; q++) {
-                                multiPoly = turf.union(multiPoly, { "type": "Feature", "properties": {}, "geometry": geoms[q] });
+                                multiPoly = union(multiPoly, { "type": "Feature", "properties": {}, "geometry": geoms[q] });
                             }
                             fea['geometry'] = multiPoly.geometry
                         } else {
@@ -328,4 +334,5 @@ const toGeojson = function (bufferData) {
     return { 'geojsons': geojsons, 'relations': rels, 'errors':errors };
 }
 
-module.exports = toGeojson;
+// module.exports = toGeojson;
+export default toGeojson

@@ -1,17 +1,37 @@
 {
   "name": "edigeo-to-geojson",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "description": "Convertit les fichiers du cadatre français de l'EDIGEO en GEOJSON",
-  "main": "index.js",
+  "main": "./lib/index.cjs",
+  "exports": {
+    ".": {
+      "require": "./lib/index.cjs",
+      "default": "./lib/index.mjs"
+    }
+  },
+  "module": "./lib/index.mjs",
+  "scripts": {
+    "test": "mocha",
+    "js:esmbuild": "BABEL_ENV=cjs rollup --config",
+    "js:iifebuild": "BABEL_ENV=iife rollup --config",
+    "build": "npm run js:esmbuild",
+    "watch": "BABEL_ENV=cjs rollup --config --watch"
+  },
   "dependencies": {
     "@turf/turf": "^5.1.6",
-    "iconv-lite": "^0.4.24"
+    "iconv-lite": "^0.5.1"
   },
   "devDependencies": {
-    "decompress": "^4.2.0"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "@babel/core": "^7.8.3",
+    "@babel/preset-env": "^7.8.3",
+    "decompress": "^4.2.0",
+    "mocha": "^7.0.1",
+    "rollup": "^1.30.1",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-terser": "^5.2.0"
   },
   "author": "Fabien Del Olmo",
   "license": "ISC"

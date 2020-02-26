@@ -26,7 +26,8 @@ const getProjection = function (GEO_file) {
         "GUAD48UTM20": { "epsg": 2970 },
         "MART38UTM20": { "epsg": 2973 },
         "RGFG95UTM22": { "epsg": 2972 },
-        "RGR92UTM": { "epsg": 2975 }
+        "RGR92UTM": { "epsg": 2975 },
+        "RGM04": { "epsg": 32738 },
     }
 
     let projEdigeo;

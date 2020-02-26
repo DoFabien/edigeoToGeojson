@@ -1,6 +1,6 @@
 {
   "name": "edigeo-to-geojson",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Convertit les fichiers du cadatre français de l'EDIGEO en GEOJSON",
   "main": "./lib/index.cjs",
   "exports": {

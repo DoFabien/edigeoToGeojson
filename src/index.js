@@ -33,7 +33,7 @@ const getProjection = function (GEO_file) {
     GEO_file = GEO_file.toString();
     const rows = GEO_file.split(String.fromCharCode(13, 10)); // décompose les lignes
     for (let i = 0; i < rows.length; i++) {
-        if (/^RELSA09*/g.test(rows[i])) {
+        if (/^RELSA*/g.test(rows[i])) {
             projEdigeo = rows[i].split(':')[1];
             break;
         }
